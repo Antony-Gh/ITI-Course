@@ -24,6 +24,14 @@ int main(void) {
     HLCD_voidInit();
     KPD_voidInit();
 
+    HLCD_voidGoToXY(0, 0);
+    HLCD_voidSendStringTypingEffect("Hello, Ahmed", 100);
+
+    HLCD_voidGoToXY(1, 0);
+    HLCD_voidSendStringTypingEffect("Type A Letter", 100);
+
+    _delay_ms(5000);
+
     u8 local_u8CharCount = 0;
     u8 local_u8Key;
 

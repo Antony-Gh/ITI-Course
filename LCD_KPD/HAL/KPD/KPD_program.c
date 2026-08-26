@@ -1,9 +1,9 @@
+#include <KPD/KPD_config.h>
+#include <KPD/KPD_private.h>
 #include "../../LIB/STD_TYPES.h"
 #include "../../LIB/BIT_MATH.h"
 #include "../../MCAL/DIO/MDIO_interface.h"
 #include "KPD_interface.h"
-#include "KPD_config.h"
-#include "KPD_private.h"
 #include <util/delay.h>
 
 void KPD_voidInit(void) {
