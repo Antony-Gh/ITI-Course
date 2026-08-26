@@ -1,0 +1,72 @@
+
+
+
+
+
+
+
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin https://github.com/YOUR_USERNAME/chemquest.git
+git push -u origin main
+
+
+
+
+
+
+
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git push -u origin main
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# initialize git repository
+
+git init
+
+git status
+
+git add .
+
+git commit -m "Initial commit"
+
+gh repo create ITI-Course --public --source=. --remote=origin --push
+
+
+
+
+
+# git remote add origin https://github.com/Antony-gh/ROV-Workspace-New.git
+
+# git push -u origin 
+
+
+git status
+
+git add .
+
+git commit -m "first Initial Laravel setup files"
+
+
+git push -u origin master
+
+
+
