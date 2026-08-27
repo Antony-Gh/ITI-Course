@@ -1,8 +1,8 @@
 /*
  * main.c
  *
- *  Created on: Aug 25, 2026
- *      Author: AnthonyGaius
+ *  Created on: Aug 27, 2026
+ *      Author: Anthony Gaius
  */
 
 #include "../LIB/STD_TYPES.h"
@@ -11,57 +11,42 @@
 #ifndef F_CPU
 #define F_CPU 8000000UL /* 8 MHz clock speed as default */
 #endif
-
 #include <util/delay.h>
 
 #include "../MCAL/DIO/MDIO_interface.h"
-#include "../HAL/LCD/HLCD_interface.h"
-#include "../HAL/KPD/KPD_interface.h"
+#include "../HAL/PB/HPB_interface.h"
+#include "../HAL/DCMOTOR/HDCMOTOR_interface.h"
+
+#define BUTTON_PORT DIO_PORTB
+#define BUTTON_PIN  DIO_PIN6
 
 int main(void) {
-    /* Initialize DIO, LCD, and KPD */
+    /* Initialize DIO */
     DIO_voidInit();
-    HLCD_voidInit();
-    KPD_voidInit();
-
-    HLCD_voidGoToXY(0, 0);
-    HLCD_voidSendStringTypingEffect("Hello, Ahmed", 100);
-
-    HLCD_voidGoToXY(1, 0);
-    HLCD_voidSendStringTypingEffect("Type A Letter", 100);
-
-    _delay_ms(5000);
-
-    u8 local_u8CharCount = 0;
-    u8 local_u8Key;
-
-    /* Initial state */
-    HLCD_voidClearScreen();
-    HLCD_voidGoToXY(0, 0);
-
+    
+    /* Initialize Button (Pull-Up) */
+    HPB_voidInit(BUTTON_PORT, BUTTON_PIN, HPB_PULL_DOWN);
+    
+    /* Initialize Motor */
+    HDCMOTOR_t Motor = {MOTOR_PORT, MOTOR_PIN1, MOTOR_PIN2};
+    HDCMOTOR_voidInit(&Motor);
+    
+    u8 local_u8ButtonState;
+    
     while (1) {
-        local_u8Key = KPD_u8GetPressedKey();
+        /* Read Button State */
+        HPB_voidGetState(BUTTON_PORT, BUTTON_PIN, HPB_PULL_DOWN, &local_u8ButtonState);
         
-        if (local_u8Key != KPD_NOT_PRESSED) {
-            /* If screen is full, clear it and reset counter */
-            if (local_u8CharCount == 32) {
-                HLCD_voidClearScreen();
-                local_u8CharCount = 0;
-                /* HLCD_voidClearScreen already resets cursor to 0,0 typically, 
-                 * but we can explicitly set it just to be safe */
-                HLCD_voidGoToXY(0, 0);
-            }
-            
-            /* If we reached the end of the first line, move to the second line */
-            if (local_u8CharCount == 16) {
-                HLCD_voidGoToXY(1, 0);
-            }
-            
-            /* Print the character on the LCD */
-            HLCD_voidSendData(local_u8Key);
-            
-            /* Increment character count */
-            local_u8CharCount++;
+        /* 
+         * The switch acts as a break: motor rotates as long as switch is NOT pressed. 
+         * With HPB_PULL_UP, pressed state is evaluated as HPB_PRESSED.
+         */
+        if (local_u8ButtonState == HPB_PRESSED) {
+            /* Stop motor */
+            HDCMOTOR_voidStop(&Motor);
+        } else {
+            /* Run motor in one direction */
+            HDCMOTOR_voidRun(&Motor, HDCMOTOR_CW);
         }
     }
 
