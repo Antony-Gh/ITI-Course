@@ -4,89 +4,134 @@
  *  Created on: Aug 27, 2026
  *      Author: Anthony Gaius
  *
+ * Application: 2-Relay H-Bridge DC Motor Direction Control
  */
 
-#include "../LIB/BIT_MATH.h"
 #include "../LIB/STD_TYPES.h"
 
-#ifndef F_CPU
-#define F_CPU 8000000UL /* 8 MHz clock speed as default */
-#endif
-#include <util/delay.h>
-
+#include "../CONFIG/APP/APP_config.h"
 #include "../HAL/DCMOTOR/HDCMOTOR_interface.h"
+#include "../HAL/LED/HLED_interface.h"
+#include "../HAL/LCD/HLCD_interface.h"
 #include "../HAL/PB/HPB_interface.h"
 #include "../MCAL/DIO/MDIO_interface.h"
+#include "../MCAL/TIMER/MTIMER_interface.h"
 
-#define OFF_BUTTON_PORT DIO_PORTB
-#define OFF_BUTTON_PIN DIO_PIN6
+static u8 s_u8PowerState = 0U;
+static u8 s_u8CurrentDirection = HDCMOTOR_CW;
+static u8 s_u8PreviousPowerState = 0xFFU;
+static u8 s_u8PreviousDirection = 0xFFU;
 
-#define MODE_BUTTON_PORT DIO_PORTB
-#define MODE_BUTTON_PIN DIO_PIN7
+static void APP_voidUpdateIndicators(void) {
+#if APP_USE_LED
+  HLED_voidSetLed(APP_LED_POWER_IDX, s_u8PowerState);
+  HLED_voidSetLed(APP_LED_DIRECTION_IDX,
+                  (s_u8PowerState != 0U &&
+                   s_u8CurrentDirection == HDCMOTOR_CCW)
+                      ? DIO_HIGH
+                      : DIO_LOW);
+#endif
+
+#if APP_USE_LCD
+  HLCD_voidGoToXY(0, 0);
+  if (s_u8PowerState != 0U) {
+    HLCD_voidSendString("Motor: ON   ");
+  } else {
+    HLCD_voidSendString("Motor: OFF  ");
+  }
+
+  HLCD_voidGoToXY(1, 0);
+  if (s_u8PowerState == 0U) {
+    HLCD_voidSendString("Dir:  ---    ");
+  } else if (s_u8CurrentDirection == HDCMOTOR_CW) {
+    HLCD_voidSendString("Dir:  CW     ");
+  } else {
+    HLCD_voidSendString("Dir:  CCW    ");
+  }
+#endif
+}
+
+static void APP_voidApplyMotorCommand(HDCMOTOR_t *Copy_pstMotor) {
+  if (s_u8PowerState == s_u8PreviousPowerState &&
+      (s_u8PowerState == 0U ||
+       s_u8CurrentDirection == s_u8PreviousDirection)) {
+    return;
+  }
+
+  if (s_u8PowerState == 0U) {
+    (void)HDCMOTOR_enumRequestStop(Copy_pstMotor);
+  } else {
+    (void)HDCMOTOR_enumRequestRun(Copy_pstMotor, s_u8CurrentDirection);
+  }
+
+  s_u8PreviousPowerState = s_u8PowerState;
+  s_u8PreviousDirection = s_u8CurrentDirection;
+}
 
 int main(void) {
-  /* Initialize DIO */
+  HPB_t local_stOffButton;
+  HPB_t local_stModeButton;
+  HDCMOTOR_t local_stMotor;
+  u8 local_u8Edge;
+  u8 local_u8DisplayDirty = 1U;
+
+  MTIMER_voidInit();
   DIO_voidInit();
 
-  /* Initialize Button (Pull-Down) */
-  HPB_voidInit(OFF_BUTTON_PORT, OFF_BUTTON_PIN, HPB_PULL_DOWN);
+#if APP_USE_LED
+  HLED_voidInit();
+#endif
 
-  HPB_voidInit(MODE_BUTTON_PORT, MODE_BUTTON_PIN, HPB_PULL_DOWN);
+#if APP_USE_LCD
+  HLCD_voidInit();
+  HLCD_voidClearScreen();
+#endif
 
-  /* Initialize 2-relay H-bridge motor driver (PD0=CW relay, PD1=CCW relay) */
-  HDCMOTOR_t Motor = {HDCMOTOR_RELAY_PORT, HDCMOTOR_RELAY_CW_PIN,
-                      HDCMOTOR_RELAY_CCW_PIN};
-  HDCMOTOR_voidInit(&Motor);
+  (void)HPB_enumInit(&local_stOffButton, APP_OFF_BUTTON_PORT,
+                     APP_OFF_BUTTON_PIN, HPB_PULL_UP);
+  (void)HPB_enumInit(&local_stModeButton, APP_MODE_BUTTON_PORT,
+                     APP_MODE_BUTTON_PIN, HPB_PULL_UP);
 
-  u8 local_u8ButtonState;
-  u8 local_u8PreviousButtonState = HPB_RELEASED;
-  u8 local_u8PowerState = 0; /* 0 = OFF, 1 = ON */
+  local_stMotor.Port = HDCMOTOR_RELAY_PORT;
+  local_stMotor.RelayCwPin = HDCMOTOR_RELAY_CW_PIN;
+  local_stMotor.RelayCcwPin = HDCMOTOR_RELAY_CCW_PIN;
+  (void)HDCMOTOR_enumInit(&local_stMotor);
 
-  u8 local_u8Mode;
-  u8 local_u8PreviousMode = HPB_RELEASED;
-  u8 local_u8CurrentDirection = HDCMOTOR_CW;
+  APP_voidUpdateIndicators();
 
   while (1) {
-    /* Read Button States */
-    HPB_voidGetState(OFF_BUTTON_PORT, OFF_BUTTON_PIN, HPB_PULL_DOWN,
-                     &local_u8ButtonState);
+    HPB_voidUpdate(&local_stOffButton);
+    HPB_voidUpdate(&local_stModeButton);
 
-    HPB_voidGetState(MODE_BUTTON_PORT, MODE_BUTTON_PIN, HPB_PULL_DOWN,
-                     &local_u8Mode);
-
-    /* Edge detection for OFF Button (Toggle Power) */
-    if (local_u8ButtonState == HPB_PRESSED &&
-        local_u8PreviousButtonState == HPB_RELEASED) {
-      if (local_u8PowerState == 1) {
-        local_u8PowerState = 0;                 /* Turn off */
-        local_u8CurrentDirection = HDCMOTOR_CW; /* Reset mode to forward */
+    if (HPB_enumGetEdge(&local_stOffButton, &local_u8Edge) == OK &&
+        local_u8Edge == HPB_EDGE_PRESSED) {
+      if (s_u8PowerState != 0U) {
+        s_u8PowerState = 0U;
+        s_u8CurrentDirection = HDCMOTOR_CW;
       } else {
-        local_u8PowerState = 1; /* Turn on */
+        s_u8PowerState = 1U;
       }
+      local_u8DisplayDirty = 1U;
     }
-    local_u8PreviousButtonState = local_u8ButtonState;
 
-    /* Edge detection for Mode Button (toggle direction) */
-    if (local_u8Mode == HPB_PRESSED && local_u8PreviousMode == HPB_RELEASED) {
-      if (local_u8CurrentDirection == HDCMOTOR_CW) {
-        local_u8CurrentDirection = HDCMOTOR_CCW;
+    if (s_u8PowerState != 0U &&
+        HPB_enumGetEdge(&local_stModeButton, &local_u8Edge) == OK &&
+        local_u8Edge == HPB_EDGE_PRESSED) {
+      if (s_u8CurrentDirection == HDCMOTOR_CW) {
+        s_u8CurrentDirection = HDCMOTOR_CCW;
       } else {
-        local_u8CurrentDirection = HDCMOTOR_CW;
+        s_u8CurrentDirection = HDCMOTOR_CW;
       }
-    }
-    local_u8PreviousMode = local_u8Mode;
-
-    /* Motor Control Logic */
-    if (local_u8PowerState == 0) {
-      /* Stop motor */
-      HDCMOTOR_voidStop(&Motor);
-    } else {
-      /* Run motor in current direction */
-      HDCMOTOR_voidRun(&Motor, local_u8CurrentDirection);
+      local_u8DisplayDirty = 1U;
     }
 
-    /* Small delay for debounce */
-    _delay_ms(10);
+    APP_voidApplyMotorCommand(&local_stMotor);
+    HDCMOTOR_voidUpdate(&local_stMotor);
+
+    if (local_u8DisplayDirty != 0U) {
+      APP_voidUpdateIndicators();
+      local_u8DisplayDirty = 0U;
+    }
   }
 
   return 0;
