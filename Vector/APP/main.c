@@ -1,62 +1,58 @@
 /*
  * main.c
  *
- *  Created on: Aug 27, 2026
+ *  Created on: Aug 30, 2026
  *      Author: Anthony Gaius
  *
- * Application: INT2 external interrupt toggles LED on PA2
  */
 
 #include "../LIB/BIT_MATH.h"
 #include "../LIB/STD_TYPES.h"
-
-#include <avr/interrupt.h>
 #include <avr/io.h>
-
 #include "../MCAL/DIO/MDIO_interface.h"
 
 int main(void) {
-  /* Initialize DIO ports */
   DIO_voidInit();
-
-  /* INT2 pin (PB2) as input */
   (void)DIO_enumSetPinDirection(DIO_PORTB, DIO_PIN2, DIO_INPUT);
-
-  /* LED pin (PA2) as output */
   (void)DIO_enumSetPinDirection(DIO_PORTA, DIO_PIN2, DIO_OUTPUT);
 
-  /* Enable pull-up on INT2 (PB2) */
+  // Enable internal pull-up on INT2 (PB2) - Don't Use External pull-down
   (void)DIO_enumSetPinValue(DIO_PORTB, DIO_PIN2, DIO_HIGH);
-
-  /* Set INT2 trigger to falling edge */
-  CLR_BIT(MCUCSR, 6);
-
-  /* Enable INT2 specific interrupt */
+  // Turn off led at the start
+  (void)DIO_enumSetPinValue(DIO_PORTA, DIO_PIN2, DIO_LOW);
+  // Clear any pending INT2 flag
+  // GIFR = General Interrupt Flag Register
+  // INTF2 = Interrupt Flag 2 = 5
+  SET_BIT(GIFR, 5);
+  // Set INT2 trigger to falling edge (0 = failing / 1 = Rising)
+  // MCUCSR = MCU Control and Status Register
+  // ISC2 = Interrupt Sense Control 2 = 0
+  CLR_BIT(MCUCSR, 0);
+  // Enable INT2 interrupt
+  // GICR = General Interrupt Control Register
+  // INT2 = External Interrupt Request 2 Enable = 5
   SET_BIT(GICR, 5);
-
-  /* Enable Global Interrupts (I-bit) */
+  // Enable global interrupts (I-bit)
+  // SREG = Status Register
+  // I = Global Interrupt Enable = Bit 7
   SET_BIT(SREG, 7);
 
   /* Empty infinite loop */
-  while (1) {
-  }
+  while (1) {}
 
   return 0;
 }
 
-ISR(INT2_vect) {
-  /* Static flag to track LED state */
+// INT2 interrupt service routine
+void __vector_3(void) __attribute__((signal));
+void __vector_3(void) {
   static u8 flag = 0U;
 
   if (flag == 0U) {
-    /* Turn LED ON */
     (void)DIO_enumSetPinValue(DIO_PORTA, DIO_PIN2, DIO_HIGH);
-    /* Update flag state */
     flag = 1U;
   } else {
-    /* Turn LED OFF */
     (void)DIO_enumSetPinValue(DIO_PORTA, DIO_PIN2, DIO_LOW);
-    /* Update flag state */
     flag = 0U;
   }
 }
