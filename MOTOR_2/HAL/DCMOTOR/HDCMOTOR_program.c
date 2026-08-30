@@ -45,9 +45,9 @@ void HDCMOTOR_voidInit(HDCMOTOR_t *Copy_pstMotor) {
                             DIO_OUTPUT);
     DIO_enumSetPinDirection(Copy_pstMotor->Port, Copy_pstMotor->Pin2,
                             DIO_OUTPUT);
-    HDCMOTOR_voidSetRelayPins(Copy_pstMotor->Port, Copy_pstMotor->Pin1,
-                              Copy_pstMotor->Pin2, HDCMOTOR_RELAY_INACTIVE_LEVEL,
-                              HDCMOTOR_RELAY_INACTIVE_LEVEL);
+    HDCMOTOR_voidSetRelayPins(
+        Copy_pstMotor->Port, Copy_pstMotor->Pin1, Copy_pstMotor->Pin2,
+        HDCMOTOR_RELAY_INACTIVE_LEVEL, HDCMOTOR_RELAY_INACTIVE_LEVEL);
   } else {
     DIO_enumSetPinDirection(MOTOR_PORT, MOTOR_PIN1, DIO_OUTPUT);
     DIO_enumSetPinDirection(MOTOR_PORT, MOTOR_PIN2, DIO_OUTPUT);
@@ -101,9 +101,9 @@ void HDCMOTOR_voidRun(HDCMOTOR_t *Copy_pstMotor, u8 Copy_u8Direction) {
 
 void HDCMOTOR_voidStop(HDCMOTOR_t *Copy_pstMotor) {
   if (Copy_pstMotor != (void *)0) {
-    HDCMOTOR_voidSetRelayPins(Copy_pstMotor->Port, Copy_pstMotor->Pin1,
-                              Copy_pstMotor->Pin2, HDCMOTOR_RELAY_INACTIVE_LEVEL,
-                              HDCMOTOR_RELAY_INACTIVE_LEVEL);
+    HDCMOTOR_voidSetRelayPins(
+        Copy_pstMotor->Port, Copy_pstMotor->Pin1, Copy_pstMotor->Pin2,
+        HDCMOTOR_RELAY_INACTIVE_LEVEL, HDCMOTOR_RELAY_INACTIVE_LEVEL);
   }
 
   s_u8ActiveDirection = 0;

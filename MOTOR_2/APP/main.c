@@ -4,16 +4,6 @@
  *  Created on: Aug 27, 2026
  *      Author: Anthony Gaius
  *
- * Application: 2-Relay H-Bridge DC Motor Direction Control
- *
- * Hardware:
- *   PB6 -> OFF button  (toggle motor power)
- *   PB7 -> MODE button (toggle direction while running)
- *   PD0 -> NPN transistor -> Relay K1 (CW direction)
- *   PD1 -> NPN transistor -> Relay K2 (CCW direction)
- *
- * The relays form an H-Bridge that reverses motor polarity.
- * Transistors isolate the AVR from the relay coil / motor supply.
  */
 
 #include "../LIB/BIT_MATH.h"
@@ -65,9 +55,10 @@ int main(void) {
                      &local_u8Mode);
 
     /* Edge detection for OFF Button (Toggle Power) */
-    if (local_u8ButtonState == HPB_PRESSED && local_u8PreviousButtonState == HPB_RELEASED) {
+    if (local_u8ButtonState == HPB_PRESSED &&
+        local_u8PreviousButtonState == HPB_RELEASED) {
       if (local_u8PowerState == 1) {
-        local_u8PowerState = 0; /* Turn off */
+        local_u8PowerState = 0;                 /* Turn off */
         local_u8CurrentDirection = HDCMOTOR_CW; /* Reset mode to forward */
       } else {
         local_u8PowerState = 1; /* Turn on */

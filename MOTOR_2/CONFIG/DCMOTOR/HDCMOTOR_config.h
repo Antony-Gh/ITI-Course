@@ -8,28 +8,7 @@
 #ifndef HDCMOTOR_CONFIG_H_
 #define HDCMOTOR_CONFIG_H_
 
-/*
- * 2-Relay H-Bridge with Transistor Isolation
- * -------------------------------------------
- * Each relay coil is driven through an NPN transistor so the MCU is
- * electrically isolated from the motor supply.
- *
- *   AVR Pin ----[1 kOhm]---- Base (NPN)
- *                              |
- *                           Emitter -> GND
- *                           Collector -> Relay Coil -> Motor Supply (+)
- *                           Flyback Diode across coil (cathode to +)
- *
- * Relay K1 (CW)  : reverses motor terminal wiring for clockwise rotation
- * Relay K2 (CCW) : reverses motor terminal wiring for counter-clockwise
- *
- * Truth table (only one relay may be ON at a time):
- *   K1   K2   Motor
- *   OFF  OFF  Stop
- *   ON   OFF  CW
- *   OFF  ON   CCW
- *   ON   ON   Forbidden (short-circuit risk)
- */
+#include "../../MCAL/DIO/MDIO_interface.h"
 
 #define HDCMOTOR_RELAY_PORT DIO_PORTD
 #define HDCMOTOR_RELAY_CW_PIN DIO_PIN0  /* PD0 -> Q1 -> Relay K1 */
