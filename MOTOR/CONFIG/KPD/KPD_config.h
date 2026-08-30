@@ -1,6 +1,10 @@
 #ifndef KPD_CONFIG_H_
 #define KPD_CONFIG_H_
 
+/* 3x3 Keypad Configuration */
+#define KPD_NUM_ROWS 4
+#define KPD_NUM_COLS 4
+
 /* Keypad Port Configuration */
 #define KPD_PORT DIO_PORTD
 
