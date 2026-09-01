@@ -1,0 +1,95 @@
+/*
+ * DIO_config.h
+ *
+ *  Created on: Aug 24, 2026
+ *      Author: Anthony Gaius
+ */
+
+#ifndef DIO_CONFIG_H_
+#define DIO_CONFIG_H_
+
+/* 
+ * Pin Direction Configuration
+ * Options: 
+ *   - DIO_INPUT
+ *   - DIO_OUTPUT
+ */
+#define DIO_PORTA_PIN0_DIR    DIO_INPUT  /* Pot wiper (ADC0) */
+#define DIO_PORTA_PIN1_DIR    DIO_INPUT /* LDR divider (ADC1) */
+#define DIO_PORTA_PIN2_DIR    DIO_INPUT
+#define DIO_PORTA_PIN3_DIR    DIO_INPUT
+#define DIO_PORTA_PIN4_DIR    DIO_INPUT
+#define DIO_PORTA_PIN5_DIR    DIO_INPUT
+#define DIO_PORTA_PIN6_DIR    DIO_INPUT
+#define DIO_PORTA_PIN7_DIR    DIO_INPUT
+
+#define DIO_PORTB_PIN0_DIR    DIO_OUTPUT /* LCD data bus */
+#define DIO_PORTB_PIN1_DIR    DIO_OUTPUT /* Buzzer (Timer1 OC1A) */
+#define DIO_PORTB_PIN2_DIR    DIO_OUTPUT
+#define DIO_PORTB_PIN3_DIR    DIO_OUTPUT
+#define DIO_PORTB_PIN4_DIR    DIO_OUTPUT
+#define DIO_PORTB_PIN5_DIR    DIO_OUTPUT
+#define DIO_PORTB_PIN6_DIR    DIO_OUTPUT
+#define DIO_PORTB_PIN7_DIR    DIO_OUTPUT
+
+#define DIO_PORTC_PIN0_DIR    DIO_OUTPUT /* LCD RS */
+#define DIO_PORTC_PIN1_DIR    DIO_OUTPUT /* LCD RW */
+#define DIO_PORTC_PIN2_DIR    DIO_OUTPUT /* LCD EN */
+#define DIO_PORTC_PIN3_DIR    DIO_INPUT
+#define DIO_PORTC_PIN4_DIR    DIO_INPUT
+#define DIO_PORTC_PIN5_DIR    DIO_INPUT
+#define DIO_PORTC_PIN6_DIR    DIO_INPUT
+#define DIO_PORTC_PIN7_DIR    DIO_INPUT
+
+#define DIO_PORTD_PIN0_DIR    DIO_OUTPUT /* Low-light LED */
+#define DIO_PORTD_PIN1_DIR    DIO_OUTPUT /* Mid-light LED */
+#define DIO_PORTD_PIN2_DIR    DIO_OUTPUT /* High-light LED */
+#define DIO_PORTD_PIN3_DIR    DIO_INPUT
+#define DIO_PORTD_PIN4_DIR    DIO_INPUT
+#define DIO_PORTD_PIN5_DIR    DIO_INPUT
+#define DIO_PORTD_PIN6_DIR    DIO_INPUT
+#define DIO_PORTD_PIN7_DIR    DIO_INPUT
+
+/* 
+ * Pin Value Configuration
+ * Options: 
+ *   - DIO_LOW  (or Float if direction is INPUT)
+ *   - DIO_HIGH (or Pull-up if direction is INPUT)
+ */
+#define DIO_PORTA_PIN0_VAL    DIO_LOW
+#define DIO_PORTA_PIN1_VAL    DIO_LOW
+#define DIO_PORTA_PIN2_VAL    DIO_LOW
+#define DIO_PORTA_PIN3_VAL    DIO_LOW
+#define DIO_PORTA_PIN4_VAL    DIO_LOW
+#define DIO_PORTA_PIN5_VAL    DIO_LOW
+#define DIO_PORTA_PIN6_VAL    DIO_LOW
+#define DIO_PORTA_PIN7_VAL    DIO_LOW
+
+#define DIO_PORTB_PIN0_VAL    DIO_LOW
+#define DIO_PORTB_PIN1_VAL    DIO_LOW
+#define DIO_PORTB_PIN2_VAL    DIO_LOW
+#define DIO_PORTB_PIN3_VAL    DIO_LOW
+#define DIO_PORTB_PIN4_VAL    DIO_LOW
+#define DIO_PORTB_PIN5_VAL    DIO_LOW
+#define DIO_PORTB_PIN6_VAL    DIO_LOW
+#define DIO_PORTB_PIN7_VAL    DIO_LOW
+
+#define DIO_PORTC_PIN0_VAL    DIO_LOW
+#define DIO_PORTC_PIN1_VAL    DIO_LOW
+#define DIO_PORTC_PIN2_VAL    DIO_LOW
+#define DIO_PORTC_PIN3_VAL    DIO_LOW
+#define DIO_PORTC_PIN4_VAL    DIO_LOW
+#define DIO_PORTC_PIN5_VAL    DIO_LOW
+#define DIO_PORTC_PIN6_VAL    DIO_LOW
+#define DIO_PORTC_PIN7_VAL    DIO_LOW
+
+#define DIO_PORTD_PIN0_VAL    DIO_LOW
+#define DIO_PORTD_PIN1_VAL    DIO_LOW
+#define DIO_PORTD_PIN2_VAL    DIO_LOW
+#define DIO_PORTD_PIN3_VAL    DIO_LOW
+#define DIO_PORTD_PIN4_VAL    DIO_LOW
+#define DIO_PORTD_PIN5_VAL    DIO_LOW
+#define DIO_PORTD_PIN6_VAL    DIO_LOW
+#define DIO_PORTD_PIN7_VAL    DIO_LOW
+
+#endif /* DIO_CONFIG_H_ */
