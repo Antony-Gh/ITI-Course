@@ -38,14 +38,14 @@
 #define MTIMER1_PRESCALER_1024 4U
 
 /*
- * Timer0 — 1 ms system tick (CTC, 8 MHz, prescaler 64)
- * OCR0 = (F_CPU / (prescaler * 1000)) - 1 = 124
+ * Timer0 — 10 ms system tick (CTC, 8 MHz, prescaler 1024)
+ * OCR0 = F_CPU / (prescaler * 100) - 1 = 77
  */
 #define MTIMER_TIMER0_ENABLE 1U
 #define MTIMER_TIMER0_MODE MTIMER_MODE_CTC
-#define MTIMER_TIMER0_PRESCALER MTIMER_PRESCALER_64
-#define MTIMER_TIMER0_OCR_VALUE 124U
-#define MTIMER_TICK_MS 1U
+#define MTIMER_TIMER0_PRESCALER MTIMER_PRESCALER_1024
+#define MTIMER_TIMER0_OCR_VALUE 77U
+#define MTIMER_TICK_MS 10U
 
 /*
  * Timer1 — buzzer tone on OC1A/PB1 (CTC + hardware toggle, no ISR)

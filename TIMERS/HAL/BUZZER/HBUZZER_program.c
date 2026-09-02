@@ -37,7 +37,7 @@ void HBUZZER_voidSetSection(u8 Copy_u8Section) {
 	s_u8ActiveSection = local_u8Section;
 
 	MTIMER_voidStopTimer1();
-	DIO_enumSetPinValue(HBUZZER_PORT, HBUZZER_PIN, DIO_LOW);
+	DIO_enumSetPinValue(HBUZZER_PORT, HBUZZER_PIN, DIO_HIGH);
 	MTIMER_voidSetOcr1A(HBUZZER_PRIVATE_FREQ_TO_OCR(s_au16ToneHz[local_u8Section]));
 	MTIMER_voidResetTimer1();
 	MTIMER_voidStartTimer1();

@@ -22,23 +22,11 @@
 #define APP_NUM_SECTIONS 3U
 #define APP_ADC_SECTION_SIZE ((APP_ADC_MAX_VALUE + 1U) / APP_NUM_SECTIONS)
 
-/* Potentiometer sample interval in milliseconds */
-#define APP_ADC_SAMPLE_MS 150U
+/* Must be a multiple of MTIMER_TICK_MS (10 ms) */
+#define APP_ADC_SAMPLE_MS 30U
 
-/* ADC averaging samples per reading */
-#define APP_ADC_AVERAGE_SAMPLES 4U
-
-/* EMA filter: new_weight = 1/(2^APP_ADC_EMA_SHIFT) */
-#define APP_ADC_EMA_SHIFT 4U
-
-/* Consecutive matching samples before section changes */
-#define APP_SECTION_STABLE_SAMPLES 4U
-
-/* Hysteresis band at section boundaries (ADC counts) */
-#define APP_ADC_HYSTERESIS 120U
-
-/* Minimum time between section changes in milliseconds */
-#define APP_SECTION_MIN_HOLD_MS 400U
+/* Hysteresis only — enough to stop boundary flicker */
+#define APP_ADC_HYSTERESIS 60U
 
 /*
  * Invert ADC mapping: low wiper resistance (near GND, low ADC) maps to
