@@ -8,8 +8,8 @@
 #include "../../LIB/BIT_MATH.h"
 #include "../../LIB/STD_TYPES.h"
 
+#include "../../LIB/REGISTERS.h"
 #include <avr/interrupt.h>
-#include <avr/io.h>
 
 #include "../../CONFIG/EXTI/MEXTI_config.h"
 #include "../../HW/EXTI/MEXTI_private.h"
@@ -89,9 +89,7 @@ void EXTI_voidInit(void) {
 #endif
 }
 
-void EXTI_voidEnableGlobal(void) {
-  SET_BIT(SREG, 7U);
-}
+void EXTI_voidEnableGlobal(void) { SET_BIT(SREG, 7U); }
 
 u8 EXTI_u8SetCallback(u8 Copy_u8IntId, void (*Copy_pvCallback)(void)) {
   if (Copy_u8IntId > EXTI_u8_INT2) {

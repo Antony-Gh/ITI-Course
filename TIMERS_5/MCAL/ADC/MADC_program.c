@@ -8,8 +8,8 @@
 #include "../../LIB/BIT_MATH.h"
 #include "../../LIB/STD_TYPES.h"
 
+#include "../../LIB/REGISTERS.h"
 #include <avr/interrupt.h>
-#include <avr/io.h>
 #include <util/delay.h>
 
 #include "../../CONFIG/ADC/MADC_config.h"
@@ -57,7 +57,8 @@ void ADC_voidInit(void) {
 }
 
 ADC_ErrorStatus_t ADC_enumStartConversion(u8 Copy_u8Channel) {
-  ADC_ErrorStatus_t Local_enumErrorState = ADC_enumValidateChannel(Copy_u8Channel);
+  ADC_ErrorStatus_t Local_enumErrorState =
+      ADC_enumValidateChannel(Copy_u8Channel);
 
   if (Local_enumErrorState == ADC_OK) {
     ADC_voidConfigureMux(Copy_u8Channel);
@@ -106,7 +107,8 @@ ADC_ErrorStatus_t ADC_enumReadResult(u16 *Copy_pu16Result) {
 }
 
 ADC_ErrorStatus_t ADC_enumReadChannel(u8 Copy_u8Channel, u16 *Copy_pu16Result) {
-  ADC_ErrorStatus_t Local_enumErrorState = ADC_enumStartConversion(Copy_u8Channel);
+  ADC_ErrorStatus_t Local_enumErrorState =
+      ADC_enumStartConversion(Copy_u8Channel);
   u32 local_u32Timeout = 0U;
 
   if (Local_enumErrorState != ADC_OK) {

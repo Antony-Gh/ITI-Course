@@ -45,6 +45,11 @@
 #define MTIMER_TIMER0_ENABLE 1U
 #define MTIMER_TIMER0_MODE MTIMER_MODE_CTC
 #define MTIMER_TIMER0_PRESCALER MTIMER_PRESCALER_64
+/*
+     With an 8 MHz CPU and a prescaler of 64, the timer frequency is 125 kHz (1
+   tick = 8 µs). To get a 1 ms tick, you need 125 ticks. Setting OCR0 to 124
+   means the timer counts from 0 to 124 (125 steps), taking exactly 1 ms.
+*/
 #define MTIMER_TIMER0_OCR_VALUE 124U
 #define MTIMER_TIMER0_PRESCALER_VALUE 64U
 #define MTIMER_TICK_MS 1U
@@ -53,7 +58,7 @@
  * Timer1 free-running timebase for software ICU (Normal mode).
  * Tick = 8 * (1 / 8 MHz) = 1 us
  */
-#define MTIMER_TIMER1_ENABLE 1U
+#define MTIMER_TIMER1_ENABLE 0U
 #define MTIMER_TIMER1_MODE MTIMER_MODE_NORMAL
 #define MTIMER_TIMER1_PRESCALER MTIMER1_PRESCALER_8
 #define MTIMER_TIMER1_OCR1A_VALUE 0U
