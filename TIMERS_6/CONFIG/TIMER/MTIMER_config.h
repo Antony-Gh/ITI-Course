@@ -58,7 +58,7 @@
  * Timer1 free-running timebase for software ICU (Normal mode).
  * Tick = 8 * (1 / 8 MHz) = 1 us
  */
-#define MTIMER_TIMER1_ENABLE 0U
+#define MTIMER_TIMER1_ENABLE 1U
 #define MTIMER_TIMER1_MODE MTIMER_MODE_NORMAL
 #define MTIMER_TIMER1_PRESCALER MTIMER1_PRESCALER_8
 #define MTIMER_TIMER1_OCR1A_VALUE 0U
