@@ -105,6 +105,29 @@ SPI_ErrorStatus_t SPI_enumTransmit(u8 Copy_u8TxData);
 SPI_ErrorStatus_t SPI_enumReceive(u8 *Copy_pu8RxData);
 
 /**
+ * @brief  Wait for SPIF (transfer-complete) WITHOUT writing to SPDR.
+ *
+ *         This is the correct function to call in Slave mode after pre-loading
+ *         SPDR with an echo value.  Unlike SPI_enumReceive() which calls
+ *         SPI_enumTransceive() and immediately writes SPDR = 0x00 (destroying
+ *         any pre-loaded echo), this function ONLY polls SPIF and then reads
+ *         SPDR to clear the flag.
+ *
+ *         Typical slave echo usage:
+ *         @code
+ *         SPI_enumWaitForTransfer(&rx);   // Tx1: receive value (SPDR = pre-loaded 0x00)
+ *         SPDR = rx;                       // pre-load echo for Tx2
+ *         // ... process ...
+ *         SPI_enumWaitForTransfer(&dummy); // Tx2: echo shifts out, discard master dummy
+ *         SPDR = 0x00U;                   // reset for next Tx1
+ *         @endcode
+ *
+ * @param  Copy_pu8RxData   Pointer to store the received byte.
+ * @return SPI_OK / SPI_ERR_NULL_POINTER / SPI_ERR_TIMEOUT
+ */
+SPI_ErrorStatus_t SPI_enumWaitForTransfer(u8 *Copy_pu8RxData);
+
+/**
  * @brief  Transmit a buffer of bytes, discarding all received data.
  *
  * @param  Copy_pu8TxBuffer   Pointer to bytes to send.

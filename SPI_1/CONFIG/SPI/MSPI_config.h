@@ -14,11 +14,18 @@
 
 /*
  * SPI Mode (Role)
+ *
+ * This value is overridden automatically by APP/main.c based on
+ * ACTIVE_MCU, so you do NOT need to change it manually between builds.
+ * It only acts as a fallback default when used standalone.
+ *
  * Options:
  *   - 0U : SPI_MODE_SLAVE
  *   - 1U : SPI_MODE_MASTER
  */
-#define SPI_MODE  1U
+#ifndef SPI_MODE
+#define SPI_MODE  1U   /* default: master (overridden by main.c) */
+#endif
 
 /*
  * Data Order

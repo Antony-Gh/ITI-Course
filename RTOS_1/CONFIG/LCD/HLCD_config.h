@@ -11,12 +11,12 @@
 #include "../../MCAL/DIO/MDIO_interface.h"
 
 /* LCD control on PORTC. Data on PORTA so PB3/OC0 stays free for Timer0 PWM. */
-#define HLCD_CTRL_PORT DIO_PORTC
-#define HLCD_RS_PIN DIO_PIN0
-#define HLCD_RW_PIN DIO_PIN1
-#define HLCD_EN_PIN DIO_PIN2
+#define HLCD_CTRL_PORT      DIO_PORTC
+#define HLCD_RS_PIN         DIO_PIN0
+#define HLCD_RW_PIN         DIO_PIN1
+#define HLCD_EN_PIN         DIO_PIN2
 
 /* LCD Data Port Configuration */
-#define HLCD_DATA_PORT DIO_PORTD
+#define HLCD_DATA_PORT      DIO_PORTA
 
 #endif /* HLCD_CONFIG_H_ */

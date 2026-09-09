@@ -138,12 +138,62 @@ SPI_ErrorStatus_t SPI_enumTransmit(u8 Copy_u8TxData) {
 
 /* -----------------------------------------------------------------------
  * SPI_enumReceive  – receive one byte (sends dummy 0x00)
+ * NOTE: This function writes 0x00 to SPDR before polling SPIF.
+ *       Do NOT use it in Slave mode after pre-loading SPDR with an echo
+ *       value – use SPI_enumWaitForTransfer() instead.
  * --------------------------------------------------------------------- */
 SPI_ErrorStatus_t SPI_enumReceive(u8 *Copy_pu8RxData) {
     if (Copy_pu8RxData == NULL) {
         return SPI_ERR_NULL_POINTER;
     }
     return SPI_enumTransceive(0x00U, Copy_pu8RxData);
+}
+
+/* -----------------------------------------------------------------------
+ * SPI_enumWaitForTransfer  – poll SPIF WITHOUT writing SPDR
+ *
+ * This is the correct function for Slave echo/loopback scenarios:
+ *
+ *   Problem with SPI_enumReceive() in slave echo mode:
+ *     SPI_enumReceive() → SPI_enumTransceive(0x00, &rx) → SPDR = 0x00
+ *     That write DESTROYS any pre-loaded echo value in SPDR before the
+ *     master's next /SS assertion.  The master then clocks out 0x00 (or
+ *     garbage) instead of the echo.
+ *
+ *   This function NEVER touches SPDR.  It only:
+ *     1. Polls SPIF until set (or timeout)
+ *     2. Reads SPDR to clear SPIF
+ *   So any value pre-loaded into SPDR stays there until the master
+ *   starts the next SCK cycle and shifts it out.
+ * --------------------------------------------------------------------- */
+SPI_ErrorStatus_t SPI_enumWaitForTransfer(u8 *Copy_pu8RxData) {
+    u32 local_u32Timeout;
+
+    if (Copy_pu8RxData == NULL) {
+        return SPI_ERR_NULL_POINTER;
+    }
+
+    /*
+     * Poll SPIF without touching SPDR.
+     * Any value previously written to SPDR is preserved and will be
+     * shifted out on MISO the next time the master drives SCK.
+     */
+    local_u32Timeout = 0UL;
+    while (GET_BIT(SPSR, SPIF) == 0U) {
+        local_u32Timeout++;
+        if (local_u32Timeout >= SPI_TIMEOUT_COUNT) {
+            return SPI_ERR_TIMEOUT;
+        }
+    }
+
+    /*
+     * Per the ATmega32 datasheet, SPIF is cleared by:
+     *   1. Reading SPSR with SPIF set  (the while-loop did this)
+     *   2. Then accessing SPDR         (this line)
+     */
+    *Copy_pu8RxData = SPDR;
+
+    return SPI_OK;
 }
 
 /* -----------------------------------------------------------------------
