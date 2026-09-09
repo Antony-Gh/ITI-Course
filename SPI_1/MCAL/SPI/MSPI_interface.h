@@ -29,9 +29,15 @@
 
 /* -----------------------------------------------------------------------
  * SPI Mode (role) constants – used with SPI_MODE in MSPI_config.h
+ * (Also defined in MSPI_config.h so the driver internals can use them
+ *  without depending on MSPI_interface.h being included first.)
  * --------------------------------------------------------------------- */
+#ifndef SPI_MODE_SLAVE
 #define SPI_MODE_SLAVE   0U
+#endif
+#ifndef SPI_MODE_MASTER
 #define SPI_MODE_MASTER  1U
+#endif
 
 /* -----------------------------------------------------------------------
  * Data Order constants – used with SPI_DATA_ORDER in MSPI_config.h

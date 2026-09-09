@@ -13,18 +13,27 @@
 #define MSPI_CONFIG_H_
 
 /*
- * SPI Mode (Role)
+ * SPI Mode (Role) – symbolic names
+ * These are defined here (in the config file) so they are always available
+ * to both the driver internals (MSPI_private.h → MSPI_config.h) and any
+ * application code that includes MSPI_config.h before MSPI_interface.h.
+ */
+#define SPI_MODE_SLAVE  0U
+#define SPI_MODE_MASTER 1U
+
+/*
+ * Active SPI role for this build.
  *
- * This value is overridden automatically by APP/main.c based on
- * ACTIVE_MCU, so you do NOT need to change it manually between builds.
- * It only acts as a fallback default when used standalone.
+ * APP/main.c defines SPI_MODE automatically from ACTIVE_MCU before
+ * including any SPI headers, so this default only applies when the
+ * driver is used outside of that application context.
  *
  * Options:
- *   - 0U : SPI_MODE_SLAVE
- *   - 1U : SPI_MODE_MASTER
+ *   SPI_MODE_SLAVE  (0U) – this MCU is the SPI slave
+ *   SPI_MODE_MASTER (1U) – this MCU is the SPI master
  */
 #ifndef SPI_MODE
-#define SPI_MODE  1U   /* default: master (overridden by main.c) */
+#define SPI_MODE SPI_MODE_MASTER /* default: master (overridden by main.c) */
 #endif
 
 /*

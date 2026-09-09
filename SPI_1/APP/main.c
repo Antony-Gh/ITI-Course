@@ -13,22 +13,13 @@
 #include "../LIB/REGISTERS.h"
 #include "../LIB/STD_TYPES.h"
 
-/* ── MCU role selection ─────────────────────────────────────────────────────
- * Change ACTIVE_MCU to select which firmware to compile, then build and flash.
- *   MCU_1_MASTER → flash onto the SPI Master MCU (reads LM35, shows LCD)
- *   MCU_2_SLAVE  → flash onto the SPI Slave  MCU (controls DC Motor)
- * ──────────────────────────────────────────────────────────────────────────*/
-#define MCU_1_MASTER 1
-#define MCU_2_SLAVE 2
-#define ACTIVE_MCU MCU_1_MASTER
-
-/* Automatically set SPI_MODE before MSPI_config.h is included.
- * Master = 1U, Slave = 0U  – must be defined BEFORE the SPI header. */
-#if ACTIVE_MCU == MCU_1_MASTER
-#define SPI_MODE 1U /* Master */
-#else
-#define SPI_MODE 0U /* Slave  */
-#endif
+/*
+ * BUILD_CONFIG.h is the ONLY file you need to edit between builds.
+ * It defines ACTIVE_MCU and derives SPI_MODE from it.
+ * Both this file and MCAL/SPI/MSPI_program.c include it, so the SPI
+ * hardware is always configured to match the application role.
+ */
+#include "../LIB/BUILD_CONFIG.h"
 
 #include "../MCAL/ADC/MADC_interface.h"
 #include "../MCAL/DIO/MDIO_interface.h"
@@ -61,10 +52,10 @@
 
 int main(void) {
 
-  u8 local_u8TempC    = 0U; /* temperature read from LM35     */
+  u8 local_u8TempC = 0U;    /* temperature read from LM35     */
   u8 local_u8EchoBack = 0U; /* echo received back from slave  */
   u32 local_u32LastMs = 0U;
-  u32 local_u32NowMs  = 0U;
+  u32 local_u32NowMs = 0U;
 
   /* ------------------------------------------------------------------
    * Peripheral initialisation
@@ -214,4 +205,3 @@ int main(void) {
 }
 
 #endif /* ACTIVE_MCU */
-

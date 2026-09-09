@@ -12,6 +12,18 @@
 #ifndef MSPI_PRIVATE_H_
 #define MSPI_PRIVATE_H_
 
+/*
+ * Pull in the project-level build selection first.
+ * This defines SPI_MODE (0 = slave, 1 = master) BEFORE MSPI_config.h
+ * is processed, so the #ifndef SPI_MODE guard in MSPI_config.h sees
+ * the correct value for this compilation unit (MSPI_program.c).
+ *
+ * Without this, MSPI_program.c would always default to SPI_MODE_MASTER
+ * because the #define SPI_MODE in APP/main.c lives in a different
+ * translation unit and is never visible here.
+ */
+#include "../../LIB/BUILD_CONFIG.h"
+
 #include "../../CONFIG/SPI/MSPI_config.h"
 
 /* -----------------------------------------------------------------------
