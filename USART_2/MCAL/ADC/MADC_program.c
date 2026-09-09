@@ -10,7 +10,8 @@
 
 #include "../../LIB/REGISTERS.h"
 #include <avr/interrupt.h>
-#include <util/delay.h>
+
+#include "../../MCAL/TIMER/MTIMER_interface.h"
 
 #include "../../CONFIG/ADC/MADC_config.h"
 #include "../../HW/ADC/MADC_private.h"
@@ -43,7 +44,7 @@ void ADC_voidInit(void) {
 #endif
 
   /* Allow ADC analog front-end to stabilize (datasheet). */
-  _delay_us(50U);
+  MTIMER_voidDelayMs(50U);
 
   /* Discard the first conversion after enable. */
   SET_BIT(ADCSRA, ADSC);

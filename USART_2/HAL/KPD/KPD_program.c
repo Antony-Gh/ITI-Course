@@ -4,7 +4,7 @@
 #include "../../LIB/BIT_MATH.h"
 #include "../../MCAL/DIO/MDIO_interface.h"
 #include "KPD_interface.h"
-#include <util/delay.h>
+#include "../../MCAL/TIMER/MTIMER_interface.h"
 
 static u8 Local_u8KPDArr[KPD_NUM_ROWS][KPD_NUM_COLS] = KPD_KEYS;
 static u8 Local_u8RowArr[KPD_NUM_ROWS] = {KPD_R0_PIN, KPD_R1_PIN, KPD_R2_PIN, KPD_R3_PIN};
@@ -72,7 +72,7 @@ u8 KPD_u8GetPressedKey(void) {
                     }
 
                     /* Debounce delay */
-                    _delay_ms(20);
+                    MTIMER_voidDelayMs(20);
                     /* Deactivate current row before returning */
                     DIO_enumSetPinValue(KPD_PORT, Local_u8RowArr[Local_u8RowIdx], DIO_HIGH);
                     return Local_u8PressedKey;

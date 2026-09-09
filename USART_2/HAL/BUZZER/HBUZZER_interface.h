@@ -14,4 +14,7 @@ void HBUZZER_voidInit(void);
 void HBUZZER_voidSetSection(u8 Copy_u8Section);
 void HBUZZER_voidStop(void);
 
+/* Set tone directly by OCR1A compare value (for UART-controlled second MCU) */
+void HBUZZER_voidSetToneByOCR(u16 Copy_u16OcrValue);
+
 #endif /* HBUZZER_INTERFACE_H_ */

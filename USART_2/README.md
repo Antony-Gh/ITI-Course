@@ -44,4 +44,4 @@ USART settings: **9600 baud, 8 data bits, no parity, 1 stop bit** (`8N1`), CPU *
 
 ## Build
 
-Open `TIMERS_6` in AVR Eclipse, **rebuild**, then load `Debug\TIMERS_6.hex`.
+Open `USART_2` in AVR Eclipse, **rebuild**, then load `Debug\USART_2.hex`.

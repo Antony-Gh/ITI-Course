@@ -6,7 +6,7 @@
 #define KPD_NUM_COLS 4
 
 /* Keypad Port Configuration */
-#define KPD_PORT DIO_PORTD
+#define KPD_PORT DIO_PORTB
 
 /* Keypad Row Pins */
 #define KPD_R0_PIN DIO_PIN0
@@ -21,11 +21,10 @@
 #define KPD_C3_PIN DIO_PIN7
 
 /* Keypad Values Mapping */
-#define KPD_KEYS { \
-    {'1', '2', '3', 'A'}, \
-    {'4', '5', '6', 'B'}, \
-    {'7', '8', '9', 'C'}, \
-    {'*', '0', '#', 'D'}  \
-}
+#define KPD_KEYS                                                               \
+  {{'7', '8', '9', '/'},                                                       \
+   {'4', '5', '6', '*'},                                                       \
+   {'1', '2', '3', '-'},                                                       \
+   {'C', '0', '=', '+'}}
 
 #endif /* KPD_CONFIG_H_ */
