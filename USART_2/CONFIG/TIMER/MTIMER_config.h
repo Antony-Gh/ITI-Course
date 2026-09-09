@@ -47,7 +47,7 @@
 #define MTIMER_TIMER0_PRESCALER MTIMER_PRESCALER_64
 /*
      With an 8 MHz CPU and a prescaler of 64, the timer frequency is 125 kHz (1
-   tick = 8 µs). To get a 1 ms tick, you need 125 ticks. Setting OCR0 to 124
+   tick = 8 Âµs). To get a 1 ms tick, you need 125 ticks. Setting OCR0 to 124
    means the timer counts from 0 to 124 (125 steps), taking exactly 1 ms.
 */
 #define MTIMER_TIMER0_OCR_VALUE 124U
@@ -64,10 +64,10 @@
 #define MTIMER_TIMER1_OCR1A_VALUE 0U
 #define MTIMER_TIMER1_PRESCALER_VALUE 8U
 
-/* Timer2 disabled by default */
-#define MTIMER_TIMER2_ENABLE 0U
-#define MTIMER_TIMER2_MODE MTIMER_MODE_NORMAL
+/* Timer2 enabled as the 1ms System Tick for delay functions */
+#define MTIMER_TIMER2_ENABLE 1U
+#define MTIMER_TIMER2_MODE MTIMER_MODE_CTC
 #define MTIMER_TIMER2_PRESCALER MTIMER_PRESCALER_64
-#define MTIMER_TIMER2_OCR_VALUE 0U
+#define MTIMER_TIMER2_OCR_VALUE 124U
 
 #endif /* MTIMER_CONFIG_H_ */

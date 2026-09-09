@@ -11,6 +11,8 @@
 #define F_CPU 8000000UL
 #endif
 
+#include "../LIB/BIT_MATH.h"
+#include "../LIB/REGISTERS.h"
 #include "../LIB/STD_TYPES.h"
 
 #include "../HAL/KPD/KPD_interface.h"
@@ -33,6 +35,10 @@
  * Reads OCR0 value from keypad and sends it via UART.
  */
 int main(void) {
+  /* Must initialize MTIMER first so MTIMER_voidDelayMs() works for LCD & KPD!
+   */
+  MTIMER_voidInit();
+
   DIO_voidInit();
   HLCD_voidInit();
   KPD_voidInit();
@@ -82,29 +88,31 @@ int main(void) {
 /*
  * MCU 2 (Receiver)
  * Receives OCR0 value via UART and uses it to generate PWM (Tone) on buzzer.
- *
- * IMPORTANT: Ensure the following configurations are set in your drivers:
- * 1. MTIMER_config.h: #define MTIMER_TIMER0_MODE MTIMER_MODE_FAST_PWM
  */
 int main(void) {
   DIO_voidInit();
   USART_voidInit();
 
-  /* Initialize Timers (Timer0 will start in Fast PWM mode if configured so) */
+  /* Set PB3 (OC0) as output for Tone signal to the buzzer */
+  DIO_enumSetPinDirection(DIO_PORTB, DIO_PIN3, DIO_OUTPUT);
+  DIO_enumSetPinValue(DIO_PORTB, DIO_PIN3, DIO_LOW);
+
+  /* Initialize all enabled timers based on MTIMER_config.h (Timer0=PWM,
+   * Timer2=SystemTick) */
   MTIMER_voidInit();
 
-  /* Set PB3 (OC0) as output for PWM signal to the buzzer */
-  DIO_enumSetPinDirection(DIO_PORTB, DIO_PIN3, DIO_OUTPUT);
-
-  /* Initial Duty Cycle 0% */
+  /* Start completely silent */
   MTIMER_voidSetOcr0(0);
 
   u8 received_val = 0;
-  MTIMER_voidSetOcr0(received_val);
 
   while (1) {
     if (USART_enumReceive(&received_val) == USART_OK) {
-      /* Update OCR0 to change the PWM duty cycle (Tone) */
+
+      if (received_val == 0U) {
+        DIO_enumSetPinValue(DIO_PORTB, DIO_PIN3, DIO_LOW);
+      }
+      /* The driver automatically disconnects the pin for true 0% duty cycle */
       MTIMER_voidSetOcr0(received_val);
     }
   }

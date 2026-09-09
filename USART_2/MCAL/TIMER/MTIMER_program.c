@@ -143,7 +143,18 @@ void MTIMER_voidDelayMs(u16 Copy_u16DelayMs) {
 }
 
 #if MTIMER_TIMER0_ENABLE
-void MTIMER_voidSetOcr0(u8 Copy_u8Value) { OCR0 = Copy_u8Value; }
+void MTIMER_voidSetOcr0(u8 Copy_u8Value) {
+  OCR0 = Copy_u8Value;
+#if (MTIMER_TIMER0_MODE == MTIMER_MODE_FAST_PWM)
+  if (Copy_u8Value == 0U) {
+    /* Disconnect OC0 to achieve true 0% duty cycle (removes 1/256 glitch) */
+    CLR_BIT(TCCR0, MTIMER_TCCR0_COM01_BIT);
+  } else {
+    /* Re-connect OC0 (Non-inverting Fast PWM) */
+    SET_BIT(TCCR0, MTIMER_TCCR0_COM01_BIT);
+  }
+#endif
+}
 #endif
 
 #if MTIMER_TIMER1_ENABLE
@@ -202,21 +213,12 @@ void MTIMER_voidSetCompareIntState(u8 Copy_u8TimerId, u8 Copy_u8Enable) {
 
 #if MTIMER_TIMER0_ENABLE
 ISR(TIMER0_COMP_vect) {
-#if (MTIMER_TIMER0_MODE == MTIMER_MODE_CTC)
-  s_u32Millis += MTIMER_TICK_MS;
-#endif
-
   if (s_apvCompareCallbacks[MTIMER_u8_TIMER0] != NULL) {
     s_apvCompareCallbacks[MTIMER_u8_TIMER0]();
   }
 }
 
 ISR(TIMER0_OVF_vect) {
-#if (MTIMER_TIMER0_MODE == MTIMER_MODE_NORMAL)
-  TCNT0 = 131U; /* Preload for 1ms tick */
-  s_u32Millis += MTIMER_TICK_MS;
-#endif
-
   if (s_apvOverflowCallbacks[MTIMER_u8_TIMER0] != NULL) {
     s_apvOverflowCallbacks[MTIMER_u8_TIMER0]();
   }
@@ -241,12 +243,21 @@ ISR(TIMER1_OVF_vect) {
 
 #if MTIMER_TIMER2_ENABLE
 ISR(TIMER2_COMP_vect) {
+#if (MTIMER_TIMER2_MODE == MTIMER_MODE_CTC)
+  s_u32Millis += MTIMER_TICK_MS;
+#endif
+
   if (s_apvCompareCallbacks[MTIMER_u8_TIMER2] != NULL) {
     s_apvCompareCallbacks[MTIMER_u8_TIMER2]();
   }
 }
 
 ISR(TIMER2_OVF_vect) {
+#if (MTIMER_TIMER2_MODE == MTIMER_MODE_NORMAL)
+  TCNT2 = 131U; /* Preload for 1ms tick (assuming 64 prescaler) */
+  s_u32Millis += MTIMER_TICK_MS;
+#endif
+
   if (s_apvOverflowCallbacks[MTIMER_u8_TIMER2] != NULL) {
     s_apvOverflowCallbacks[MTIMER_u8_TIMER2]();
   }
