@@ -1,0 +1,265 @@
+/*
+ * MTIMER_program.c
+ *
+ *  Created on: Aug 30, 2026
+ *      Author: Anthony Gaius
+ */
+
+#include "../../LIB/BIT_MATH.h"
+#include "../../LIB/STD_TYPES.h"
+
+#include "../../LIB/REGISTERS.h"
+#include <avr/interrupt.h>
+
+#include "../../CONFIG/TIMER/MTIMER_config.h"
+#include "../../HW/TIMER/MTIMER_private.h"
+#include "MTIMER_interface.h"
+
+static volatile u32 s_u32Millis = 0U;
+
+static void (*s_apvOverflowCallbacks[3])(void) = {NULL, NULL, NULL};
+static void (*s_apvCompareCallbacks[3])(void) = {NULL, NULL, NULL};
+
+#if MTIMER_TIMER0_ENABLE
+static void MTIMER_voidInitTimer0(void) {
+  TCCR0 = MTIMER_PRIVATE_TIMER0_MODE_BITS | MTIMER_PRIVATE_TIMER0_CS_BITS;
+  OCR0 = MTIMER_TIMER0_OCR_VALUE;
+#if (MTIMER_TIMER0_MODE == MTIMER_MODE_CTC)
+  TCNT0 = 0U;
+  SET_BIT(TIMSK, MTIMER_TIMSK_OCIE0_BIT);
+#elif (MTIMER_TIMER0_MODE == MTIMER_MODE_NORMAL)
+  /*
+          CPU Frequency: 8,000,000 Hz (8 MHz)
+          Prescaler: 64
+          Timer Frequency: 8,000,000 / 64 = 125,000 Hz
+          Time per tick: 1 / 125,000 = 8 microseconds (µs)
+          Target Time: 1 millisecond (1000 µs)
+          Ticks needed for 1 ms: 1000 µs / 8 µs = 125 ticks
+          To force it to overflow in exactly 125 ticks, you preload the timer
+          counter (TCNT0) with the difference: 256 - 125 = 131.
+             */
+
+  TCNT0 = 131U; /* Preload for 1ms tick (8MHz/64) */
+  SET_BIT(TIMSK, MTIMER_TIMSK_TOIE0_BIT);
+#else
+  TCNT0 = 0U;
+#endif
+}
+#endif
+
+#if MTIMER_TIMER1_ENABLE
+static volatile u16 s_u16Timer1Overflows = 0U;
+
+static void MTIMER_voidInitTimer1(void) {
+  TCCR1A = 0U;
+  TCCR1B = MTIMER_PRIVATE_TIMER1_MODE_BITS | MTIMER_PRIVATE_TIMER1_CS_BITS;
+  OCR1A = MTIMER_TIMER1_OCR1A_VALUE;
+  TCNT1 = 0U;
+  s_u16Timer1Overflows = 0U;
+  SET_BIT(TIFR, MTIMER_TIFR_TOV1_BIT);
+  SET_BIT(TIMSK, MTIMER_TIMSK_TOIE1_BIT);
+}
+#endif
+
+#if MTIMER_TIMER2_ENABLE
+static void MTIMER_voidInitTimer2(void) {
+  TCCR2 = MTIMER_PRIVATE_TIMER2_MODE_BITS | MTIMER_PRIVATE_TIMER2_CS_BITS;
+  OCR2 = MTIMER_TIMER2_OCR_VALUE;
+  TCNT2 = 0U;
+  SET_BIT(TIMSK, MTIMER_TIMSK_OCIE2_BIT);
+}
+#endif
+
+void MTIMER_voidInit(void) {
+#if MTIMER_TIMER0_ENABLE
+  MTIMER_voidInitTimer0();
+#endif
+
+#if MTIMER_TIMER1_ENABLE
+  MTIMER_voidInitTimer1();
+#endif
+
+#if MTIMER_TIMER2_ENABLE
+  MTIMER_voidInitTimer2();
+#endif
+
+  MTIMER_voidEnableGlobal();
+}
+
+void MTIMER_voidEnableGlobal(void) { SET_BIT(SREG, 7U); }
+
+u32 MTIMER_u32GetMillis(void) {
+  u32 local_u32Millis;
+
+  cli();
+  local_u32Millis = s_u32Millis;
+  sei();
+
+  return local_u32Millis;
+}
+
+u8 MTIMER_u8SetOverflowCallback(u8 Copy_u8TimerId,
+                                void (*Copy_pvCallback)(void)) {
+  if (Copy_u8TimerId > MTIMER_u8_TIMER2) {
+    return NOK;
+  }
+
+  s_apvOverflowCallbacks[Copy_u8TimerId] = Copy_pvCallback;
+  return OK;
+}
+
+u8 MTIMER_u8SetCompareCallback(u8 Copy_u8TimerId,
+                               void (*Copy_pvCallback)(void)) {
+  if (Copy_u8TimerId > MTIMER_u8_TIMER2) {
+    return NOK;
+  }
+
+  s_apvCompareCallbacks[Copy_u8TimerId] = Copy_pvCallback;
+  return OK;
+}
+
+u8 MTIMER_u8IsIntervalElapsed(u32 *Copy_pu32LastMs, u16 Copy_u16IntervalMs) {
+  u32 local_u32NowMs;
+
+  if (Copy_pu32LastMs == NULL) {
+    return PARAM_ERR;
+  }
+
+  local_u32NowMs = MTIMER_u32GetMillis();
+
+  if ((local_u32NowMs - *Copy_pu32LastMs) < Copy_u16IntervalMs) {
+    return NOK;
+  }
+
+  *Copy_pu32LastMs = local_u32NowMs;
+  return OK;
+}
+
+void MTIMER_voidDelayMs(u16 Copy_u16DelayMs) {
+  u32 local_u32StartMs = MTIMER_u32GetMillis();
+
+  while ((MTIMER_u32GetMillis() - local_u32StartMs) < Copy_u16DelayMs) {
+  }
+}
+
+#if MTIMER_TIMER0_ENABLE
+void MTIMER_voidSetOcr0(u8 Copy_u8Value) {
+  OCR0 = Copy_u8Value;
+#if (MTIMER_TIMER0_MODE == MTIMER_MODE_FAST_PWM)
+  if (Copy_u8Value == 0U) {
+    /* Disconnect OC0 to achieve true 0% duty cycle (removes 1/256 glitch) */
+    CLR_BIT(TCCR0, MTIMER_TCCR0_COM01_BIT);
+  } else {
+    /* Re-connect OC0 (Non-inverting Fast PWM) */
+    SET_BIT(TCCR0, MTIMER_TCCR0_COM01_BIT);
+  }
+#endif
+}
+#endif
+
+#if MTIMER_TIMER1_ENABLE
+void MTIMER_voidSetOcr1A(u16 Copy_u16Value) { OCR1A = Copy_u16Value; }
+
+void MTIMER_voidResetTimer1(void) {
+  u8 local_u8Sreg = SREG;
+
+  cli();
+  TCNT1 = 0U;
+  s_u16Timer1Overflows = 0U;
+  SET_BIT(TIFR, MTIMER_TIFR_TOV1_BIT);
+  SET_BIT(TIFR, MTIMER_TIFR_OCF1A_BIT);
+  SREG = local_u8Sreg;
+}
+
+u32 MTIMER_u32GetTimer1Ticks(void) {
+  u8 local_u8Sreg = SREG;
+  u16 local_u16Overflows;
+  u16 local_u16Tcnt1;
+
+  cli();
+  local_u16Overflows = s_u16Timer1Overflows;
+  local_u16Tcnt1 = TCNT1;
+  if (GET_BIT(TIFR, MTIMER_TIFR_TOV1_BIT) != 0U) {
+    local_u16Tcnt1 = TCNT1;
+    local_u16Overflows++;
+  }
+  SREG = local_u8Sreg;
+
+  return (((u32)local_u16Overflows << 16) | (u32)local_u16Tcnt1);
+}
+#endif
+
+void MTIMER_voidSetCompareIntState(u8 Copy_u8TimerId, u8 Copy_u8Enable) {
+  switch (Copy_u8TimerId) {
+#if MTIMER_TIMER0_ENABLE
+  case MTIMER_u8_TIMER0:
+    ASSIGN_BIT(TIMSK, MTIMER_TIMSK_OCIE0_BIT, Copy_u8Enable);
+    break;
+#endif
+#if MTIMER_TIMER1_ENABLE
+  case MTIMER_u8_TIMER1:
+    ASSIGN_BIT(TIMSK, MTIMER_TIMSK_OCIE1A_BIT, Copy_u8Enable);
+    break;
+#endif
+#if MTIMER_TIMER2_ENABLE
+  case MTIMER_u8_TIMER2:
+    ASSIGN_BIT(TIMSK, MTIMER_TIMSK_OCIE2_BIT, Copy_u8Enable);
+    break;
+#endif
+  default:
+    break;
+  }
+}
+
+#if MTIMER_TIMER0_ENABLE
+ISR(TIMER0_COMP_vect) {
+  if (s_apvCompareCallbacks[MTIMER_u8_TIMER0] != NULL) {
+    s_apvCompareCallbacks[MTIMER_u8_TIMER0]();
+  }
+}
+
+ISR(TIMER0_OVF_vect) {
+  if (s_apvOverflowCallbacks[MTIMER_u8_TIMER0] != NULL) {
+    s_apvOverflowCallbacks[MTIMER_u8_TIMER0]();
+  }
+}
+#endif
+
+#if MTIMER_TIMER1_ENABLE
+ISR(TIMER1_COMPA_vect) {
+  if (s_apvCompareCallbacks[MTIMER_u8_TIMER1] != NULL) {
+    s_apvCompareCallbacks[MTIMER_u8_TIMER1]();
+  }
+}
+
+ISR(TIMER1_OVF_vect) {
+  s_u16Timer1Overflows++;
+
+  if (s_apvOverflowCallbacks[MTIMER_u8_TIMER1] != NULL) {
+    s_apvOverflowCallbacks[MTIMER_u8_TIMER1]();
+  }
+}
+#endif
+
+#if MTIMER_TIMER2_ENABLE
+ISR(TIMER2_COMP_vect) {
+#if (MTIMER_TIMER2_MODE == MTIMER_MODE_CTC)
+  s_u32Millis += MTIMER_TICK_MS;
+#endif
+
+  if (s_apvCompareCallbacks[MTIMER_u8_TIMER2] != NULL) {
+    s_apvCompareCallbacks[MTIMER_u8_TIMER2]();
+  }
+}
+
+ISR(TIMER2_OVF_vect) {
+#if (MTIMER_TIMER2_MODE == MTIMER_MODE_NORMAL)
+  TCNT2 = 131U; /* Preload for 1ms tick (assuming 64 prescaler) */
+  s_u32Millis += MTIMER_TICK_MS;
+#endif
+
+  if (s_apvOverflowCallbacks[MTIMER_u8_TIMER2] != NULL) {
+    s_apvOverflowCallbacks[MTIMER_u8_TIMER2]();
+  }
+}
+#endif
