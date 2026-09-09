@@ -25,7 +25,7 @@
 #define MCU_2_RX 2
 
 /* --- SELECT THE ACTIVE MCU HERE --- */
-#define ACTIVE_MCU MCU_2_RX
+#define ACTIVE_MCU MCU_1_TX
 /* ---------------------------------- */
 
 #if ACTIVE_MCU == MCU_1_TX
@@ -38,6 +38,10 @@ int main(void) {
   /* Must initialize MTIMER first so MTIMER_voidDelayMs() works for LCD & KPD!
    */
   MTIMER_voidInit();
+
+  /* Timer0 defaults to Fast PWM which takes over PB3 (OC0). 
+   * MCU 1 uses PB3 for Keypad Row 3, so we MUST disconnect OC0! */
+  MTIMER_voidSetOcr0(0);
 
   DIO_voidInit();
   HLCD_voidInit();
