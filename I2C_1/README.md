@@ -44,4 +44,4 @@ USART settings: **9600 baud, 8 data bits, no parity, 1 stop bit** (`8N1`), CPU *
 
 ## Build
 
-Open `SPI_1` in AVR Eclipse, **rebuild**, then load `Debug\SPI_1.hex`.
+Open `I2C_1` in AVR Eclipse, **rebuild**, then load `Debug\I2C_1.hex`.
