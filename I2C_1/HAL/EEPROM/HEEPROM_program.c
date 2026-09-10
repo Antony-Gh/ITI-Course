@@ -6,6 +6,7 @@
  */
 
 #include "../../LIB/STD_TYPES.h"
+#include "../../MCAL/TIMER/MTIMER_interface.h"
 
 #include "../../CONFIG/EEPROM/HEEPROM_config.h"
 #include "../../HW/EEPROM/HEEPROM_private.h"
@@ -35,6 +36,13 @@ u8 HEEPROM_u8WriteByte(u16 Copy_u16Address, u8 Copy_u8Data) {
 		return HEEPROM_ERROR;
 	}
 
+	Local_u8Error = MI2C_u8WriteData((u8) (Copy_u16Address >> 8));
+
+	if (Local_u8Error != MI2C_OK) {
+		MI2C_voidStop();
+		return HEEPROM_ERROR;
+	}
+
 	Local_u8Error = MI2C_u8WriteData((u8) Copy_u16Address);
 
 	if (Local_u8Error != MI2C_OK) {
@@ -49,6 +57,8 @@ u8 HEEPROM_u8WriteByte(u16 Copy_u16Address, u8 Copy_u8Data) {
 	if (Local_u8Error != MI2C_OK) {
 		return HEEPROM_ERROR;
 	}
+
+	MTIMER_voidDelayMs(5);
 
 	return HEEPROM_OK;
 }
@@ -68,6 +78,13 @@ u8 HEEPROM_u8ReadByte(u16 Copy_u16Address, u8 *Copy_pu8Data) {
 
 	Local_u8Error = MI2C_u8SendAddress((HEEPROM_ADDRESS << 1) |
 	HEEPROM_WRITE_ADDRESS);
+
+	if (Local_u8Error != MI2C_OK) {
+		MI2C_voidStop();
+		return HEEPROM_ERROR;
+	}
+
+	Local_u8Error = MI2C_u8WriteData((u8) (Copy_u16Address >> 8));
 
 	if (Local_u8Error != MI2C_OK) {
 		MI2C_voidStop();
