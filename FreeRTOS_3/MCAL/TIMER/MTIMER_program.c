@@ -8,8 +8,8 @@
 #include "../../LIB/BIT_MATH.h"
 #include "../../LIB/STD_TYPES.h"
 
-#include "../../LIB/REGISTERS.h"
 #include <avr/interrupt.h>
+#include <avr/io.h>
 
 #include "../../CONFIG/TIMER/MTIMER_config.h"
 #include "../../HW/TIMER/MTIMER_private.h"

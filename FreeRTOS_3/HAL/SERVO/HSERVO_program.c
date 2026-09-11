@@ -11,23 +11,6 @@
 
 static volatile u16 s_u16CurrentPulseUs = HSERVO_MIN_PULSE_US;
 
-/* Software PWM State Machine - Triggered by Timer 1 */
-static void HSERVO_voidPwmCallback(void) {
-  static u8 pwm_state = 0;
-
-  if (pwm_state == 0) {
-    /* Start of 20ms period: Set Pin HIGH */
-    DIO_enumSetPinValue(HSERVO_PORT, HSERVO_PIN, DIO_HIGH);
-    MTIMER_voidSetOcr1A(s_u16CurrentPulseUs);
-    pwm_state = 1;
-  } else {
-    /* End of pulse: Set Pin LOW, wait for remainder of 20ms */
-    DIO_enumSetPinValue(HSERVO_PORT, HSERVO_PIN, DIO_LOW);
-    MTIMER_voidSetOcr1A(HSERVO_PERIOD_US - s_u16CurrentPulseUs);
-    pwm_state = 0;
-  }
-}
-
 void HSERVO_voidInit(void) {
   /* Configure Servo Pin as Output */
   DIO_enumSetPinDirection(HSERVO_PORT, HSERVO_PIN, DIO_OUTPUT);

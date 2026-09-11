@@ -44,4 +44,4 @@ USART settings: **9600 baud, 8 data bits, no parity, 1 stop bit** (`8N1`), CPU *
 
 ## Build
 
-Open `FreeRTOS_2` in AVR Eclipse, **rebuild**, then load `Debug\FreeRTOS_2.hex`.
+Open `FreeRTOS_3` in AVR Eclipse, **rebuild**, then load `Debug\FreeRTOS_3.hex`.

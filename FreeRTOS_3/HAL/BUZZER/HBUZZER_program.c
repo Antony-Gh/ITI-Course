@@ -8,7 +8,7 @@
 #include "../../LIB/BIT_MATH.h"
 #include "../../LIB/STD_TYPES.h"
 
-#include "../../LIB/REGISTERS.h"
+#include <avr/io.h>
 
 #include "../../CONFIG/BUZZER/HBUZZER_config.h"
 #include "../../HW/BUZZER/HBUZZER_private.h"

@@ -8,9 +8,9 @@
 #include "../../LIB/BIT_MATH.h"
 #include "../../LIB/STD_TYPES.h"
 
-#include "../../LIB/REGISTERS.h"
 #include "../../LIB/DELAY.h"
 #include <avr/interrupt.h>
+#include <avr/io.h>
 
 #include "../../MCAL/TIMER/MTIMER_interface.h"
 

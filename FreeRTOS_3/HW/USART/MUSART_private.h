@@ -8,15 +8,13 @@
 #ifndef MUSART_PRIVATE_H_
 #define MUSART_PRIVATE_H_
 
-#include "../../LIB/REGISTERS.h"
 #include "../../CONFIG/USART/MUSART_config.h"
+#include <avr/io.h>
 
 #if (USART_DOUBLE_SPEED == 1U)
-#define USART_PRIVATE_UBRR \
-	((u16)((F_CPU / (8UL * USART_BAUD_RATE)) - 1UL))
+#define USART_PRIVATE_UBRR ((u16)((F_CPU / (8UL * USART_BAUD_RATE)) - 1UL))
 #else
-#define USART_PRIVATE_UBRR \
-	((u16)((F_CPU / (16UL * USART_BAUD_RATE)) - 1UL))
+#define USART_PRIVATE_UBRR ((u16)((F_CPU / (16UL * USART_BAUD_RATE)) - 1UL))
 #endif
 
 /* 8-bit data, no parity, 1 stop bit; URSEL selects UCSRC over UBRRH */
