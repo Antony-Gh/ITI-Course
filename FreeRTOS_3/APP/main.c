@@ -62,9 +62,11 @@ void Button_ISR(void) {
   /* Unblock vTaskButtonHandler from interrupt context */
   xSemaphoreGiveFromISR(xButtonSem, &xHigherPriorityTaskWoken);
 
-  /* Trigger an immediate context-switch if a higher-priority task
-   * was woken (the button handler has PRIORITY_BUTTON > PRIORITY_LED) */
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  /* Note: In the FreeRTOS AVR port, yielding from an ISR requires the ISR
+   * to be defined with the 'naked' attribute and use specific macros.
+   * Since this function is called from a standard MCAL ISR, we cannot safely
+   * trigger a context switch here. The unblocked task will execute at the
+   * next tick interrupt (up to 1 ms delay), which is fine for a button. */
 }
 
 /* ─────────────────── Button-handler task ───────────────────────────── */
