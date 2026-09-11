@@ -20,7 +20,7 @@
 #define EXTI_INT2_ENABLE 0U
 
 /* Software ICU starts on a rising edge of the PWM input on INT0 (PD2) */
-#define EXTI_INT0_SENSE EXTI_RISING_EDGE
+#define EXTI_INT0_SENSE EXTI_FALLING_EDGE
 #define EXTI_INT1_SENSE EXTI_FALLING_EDGE
 #define EXTI_INT2_SENSE EXTI_FALLING_EDGE
 

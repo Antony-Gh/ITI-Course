@@ -9,6 +9,7 @@
 #define MEXTI_INTERFACE_H_
 
 #include "../../LIB/STD_TYPES.h"
+#include "../../CONFIG/EXTI/MEXTI_config.h"
 
 #define EXTI_u8_INT0 0U
 #define EXTI_u8_INT1 1U
