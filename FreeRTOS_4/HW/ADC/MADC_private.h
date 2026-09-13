@@ -1,0 +1,39 @@
+/*
+ * MADC_private.h
+ *
+ *  Created on: Aug 31, 2026
+ *      Author: Anthony Gaius
+ */
+
+#ifndef MADC_PRIVATE_H_
+#define MADC_PRIVATE_H_
+
+#include "../../CONFIG/ADC/MADC_config.h"
+
+#if (ADC_REF_VOLTAGE == 0U)
+#define ADC_PRIVATE_REFS_BITS 0x00U
+#elif (ADC_REF_VOLTAGE == 1U)
+#define ADC_PRIVATE_REFS_BITS 0x40U /* REFS0 */
+#elif (ADC_REF_VOLTAGE == 3U)
+#define ADC_PRIVATE_REFS_BITS 0xC0U /* REFS1 | REFS0 */
+#else
+#define ADC_PRIVATE_REFS_BITS 0x40U
+#endif
+
+#if (ADC_PRESCALER == 0U)
+#define ADC_PRIVATE_PRESCALER_BITS 0x01U
+#elif (ADC_PRESCALER == 1U)
+#define ADC_PRIVATE_PRESCALER_BITS 0x02U
+#elif (ADC_PRESCALER == 2U)
+#define ADC_PRIVATE_PRESCALER_BITS 0x03U
+#elif (ADC_PRESCALER == 3U)
+#define ADC_PRIVATE_PRESCALER_BITS 0x04U
+#elif (ADC_PRESCALER == 4U)
+#define ADC_PRIVATE_PRESCALER_BITS 0x05U
+#elif (ADC_PRESCALER == 5U)
+#define ADC_PRIVATE_PRESCALER_BITS 0x06U
+#else
+#define ADC_PRIVATE_PRESCALER_BITS 0x07U
+#endif
+
+#endif /* MADC_PRIVATE_H_ */
