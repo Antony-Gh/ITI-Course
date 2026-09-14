@@ -15,54 +15,54 @@
 
 /* ====================================================================
  *  Sample Clock Configuration
- *  Timer0 CTC, Prescaler = 8, OCR0 = 124
- *  Fs = 16,000,000 / (8 * (124 + 1)) = 16,000 Hz
+ *  Timer0 CTC, Prescaler = 1, OCR0 = 255
+ *  Fs = 8,000,000 / (1 * (255 + 1)) = 31250 Hz
  * ==================================================================== */
-#define DDS_SAMPLE_RATE         16000UL
+#define DDS_SAMPLE_RATE 31250UL
 
 /* Timer0 settings for waveform sample generation */
-#define DDS_TIMER0_PRESCALER    8U
-#define DDS_TIMER0_OCR_VALUE    124U
+#define DDS_TIMER0_PRESCALER 1U
+#define DDS_TIMER0_OCR_VALUE 255U
 
 /* ====================================================================
  *  Phase Accumulator
  *  32-bit accumulator → upper 8 bits used as LUT index
  *  Frequency resolution = Fs / 2^32 ≈ 0.0000145 Hz
  * ==================================================================== */
-#define DDS_PHASE_BITS          32U
-#define DDS_LUT_SIZE            256U
-#define DDS_LUT_INDEX_SHIFT     24U     /* 32 - 8 = 24 */
+#define DDS_PHASE_BITS 32U
+#define DDS_LUT_SIZE 256U
+#define DDS_LUT_INDEX_SHIFT 24U /* 32 - 8 = 24 */
 
 /* ====================================================================
  *  Frequency Limits
  * ==================================================================== */
-#define DDS_FREQ_MIN            1UL       /* 1 Hz */
-#define DDS_FREQ_MAX            20000UL   /* 20 kHz */
-#define DDS_FREQ_DEFAULT        1000UL    /* 1 kHz */
+#define DDS_FREQ_MIN 1UL        /* 1 Hz */
+#define DDS_FREQ_MAX 20000UL    /* 20 kHz */
+#define DDS_FREQ_DEFAULT 1000UL /* 1 kHz */
 
 /* ====================================================================
  *  Waveform Types
  * ==================================================================== */
-#define DDS_WAVE_SINE           0U
-#define DDS_WAVE_TRIANGLE       1U
-#define DDS_WAVE_SQUARE         2U
-#define DDS_WAVE_SAWTOOTH       3U
-#define DDS_WAVE_SADDLE         4U
-#define DDS_WAVE_COUNT          5U
+#define DDS_WAVE_SINE 0U
+#define DDS_WAVE_TRIANGLE 1U
+#define DDS_WAVE_SQUARE 2U
+#define DDS_WAVE_SAWTOOTH 3U
+#define DDS_WAVE_SADDLE 4U
+#define DDS_WAVE_COUNT 5U
 
 /* ====================================================================
  *  PWM Output Pin (Timer1 OC1A)
  *  PD5 drives the RC Low-Pass Filter
  * ==================================================================== */
-#define DDS_PWM_PORT            DIO_PORTD
-#define DDS_PWM_PIN             DIO_PIN5
+#define DDS_PWM_PORT DIO_PORTD
+#define DDS_PWM_PIN DIO_PIN5
 
 /* ====================================================================
  *  Frequency Step Sizes
  * ==================================================================== */
-#define DDS_STEP_1HZ            1UL
-#define DDS_STEP_10HZ           10UL
-#define DDS_STEP_100HZ          100UL
-#define DDS_STEP_1KHZ           1000UL
+#define DDS_STEP_1HZ 1UL
+#define DDS_STEP_10HZ 10UL
+#define DDS_STEP_100HZ 100UL
+#define DDS_STEP_1KHZ 1000UL
 
 #endif /* DDS_CONFIG_H_ */

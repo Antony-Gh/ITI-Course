@@ -23,8 +23,8 @@
  */
 
 #include <avr/interrupt.h>
-#include <avr/pgmspace.h>
 #include <avr/io.h>
+#include <avr/pgmspace.h>
 
 #include "../../LIB/BIT_MATH.h"
 #include "../../LIB/STD_TYPES.h"
@@ -44,51 +44,44 @@ extern const u8 DDS_au8SaddleLUT[DDS_LUT_SIZE];
  * ==================================================================== */
 static volatile u32 s_u32PhaseAcc = 0;
 static volatile u32 s_u32PhaseInc = 0;
-static volatile u8  s_u8WaveType  = DDS_WAVE_SINE;
+static volatile u8 s_u8WaveType = DDS_WAVE_SINE;
 
 /* Current frequency in Hz (non-volatile, only touched in main context) */
 static u32 s_u32CurrentFreqHz = DDS_FREQ_DEFAULT;
 
 /* Waveform name strings */
 static const char s_acWaveNames[DDS_WAVE_COUNT][9] = {
-    "SINE",
-    "TRIANGLE",
-    "SQUARE",
-    "SAWTOOTH",
-    "SADDLE"
-};
+    "SINE    ", "TRIANGLE", "SQUARE  ", "SAWTOOTH", "SADDLE  "};
 
 /* ====================================================================
  *  Private: Compute phase increment from frequency
  * ==================================================================== */
-static u32 DDS_u32CalcPhaseInc(u32 Copy_u32FreqHz)
-{
-    /*
-     * phaseInc = (f * 2^32) / Fs
-     *
-     * Use 64-bit intermediate to prevent overflow.
-     * For f = 20,000 Hz:
-     *   20000 * 4294967296 = 85,899,345,920,000 — fits in u64.
-     *   / 62500 = 1,374,389,534
-     */
-    u64 local_u64Temp = (u64)Copy_u32FreqHz * DDS_PHASE_ACC_FULL_SCALE;
-    return (u32)(local_u64Temp / DDS_SAMPLE_RATE);
+static u32 DDS_u32CalcPhaseInc(u32 Copy_u32FreqHz) {
+  /*
+   * phaseInc = (f * 2^32) / Fs
+   *
+   * Use 64-bit intermediate to prevent overflow.
+   * For f = 20,000 Hz:
+   *   20000 * 4294967296 = 85,899,345,920,000 — fits in u64.
+   *   / 62500 = 1,374,389,534
+   */
+  u64 local_u64Temp = (u64)Copy_u32FreqHz * DDS_PHASE_ACC_FULL_SCALE;
+  return (u32)(local_u64Temp / DDS_SAMPLE_RATE);
 }
 
 /* ====================================================================
  *  Private: Get adaptive frequency step size
  * ==================================================================== */
-static u32 DDS_u32GetStep(u32 Copy_u32FreqHz)
-{
-    if (Copy_u32FreqHz >= 10000UL) {
-        return DDS_STEP_1KHZ;
-    } else if (Copy_u32FreqHz >= 1000UL) {
-        return DDS_STEP_100HZ;
-    } else if (Copy_u32FreqHz >= 100UL) {
-        return DDS_STEP_10HZ;
-    } else {
-        return DDS_STEP_1HZ;
-    }
+static u32 DDS_u32GetStep(u32 Copy_u32FreqHz) {
+  if (Copy_u32FreqHz >= 10000UL) {
+    return DDS_STEP_1KHZ;
+  } else if (Copy_u32FreqHz >= 1000UL) {
+    return DDS_STEP_100HZ;
+  } else if (Copy_u32FreqHz >= 100UL) {
+    return DDS_STEP_10HZ;
+  } else {
+    return DDS_STEP_1HZ;
+  }
 }
 
 /* ====================================================================
@@ -102,119 +95,100 @@ static u32 DDS_u32GetStep(u32 Copy_u32FreqHz)
 /* ====================================================================
  *  Initialization
  * ==================================================================== */
-void DDS_voidInit(void)
-{
-    /* ---- Configure PD5 (OC1A) as output for PWM DAC ---- */
-    SET_BIT(DDRD, 5U);
+void DDS_voidInit(void) {
+  /* ---- Configure PD5 (OC1A) as output for PWM DAC ---- */
+  SET_BIT(DDRD, 5U);
 
-    /* ---- Timer1: 8-bit Fast PWM mode on OC1A (PD5) ---- */
-    TCCR1A = DDS_TCCR1A_CONFIG;
-    TCCR1B = DDS_TCCR1B_CONFIG;
-    TCNT1  = 0U;
-    OCR1A  = 128U;   /* Mid-scale (0V DC offset) */
+  /* ---- Timer1: 8-bit Fast PWM mode on OC1A (PD5) ---- */
+  TCCR1A = DDS_TCCR1A_CONFIG;
+  TCCR1B = DDS_TCCR1B_CONFIG;
+  TCNT1 = 0U;
+  OCR1A = 128U; /* Mid-scale (0V DC offset) */
 
-    /* ---- Timer0: CTC mode, prescaler = 1, OCR0 = 255 ---- */
-    /*   TCCR0 = WGM01 (CTC) | CS00 (prescaler 1)            */
-    TCCR0 = DDS_TCCR0_CONFIG;
-    OCR0  = DDS_TIMER0_OCR_VALUE;
-    TCNT0 = 0U;
+  /* ---- Timer0: CTC mode, prescaler = 1, OCR0 = 255 ---- */
+  /*   TCCR0 = WGM01 (CTC) | CS00 (prescaler 1)            */
+  TCCR0 = DDS_TCCR0_CONFIG;
+  OCR0 = DDS_TIMER0_OCR_VALUE;
+  TCNT0 = 0U;
 
-    /* Enable Timer0 Compare Match interrupt */
-    SET_BIT(TIMSK, OCIE0);
+  /* Enable Timer0 Compare Match interrupt */
+  SET_BIT(TIMSK, OCIE0);
 
-    /* ---- Set default waveform and frequency ---- */
-    s_u8WaveType     = DDS_WAVE_SINE;
-    s_u32CurrentFreqHz = DDS_FREQ_DEFAULT;
-    s_u32PhaseInc    = DDS_u32CalcPhaseInc(DDS_FREQ_DEFAULT);
-    s_u32PhaseAcc    = 0;
-
-
+  /* ---- Set default waveform and frequency ---- */
+  s_u8WaveType = DDS_WAVE_SINE;
+  s_u32CurrentFreqHz = DDS_FREQ_DEFAULT;
+  s_u32PhaseInc = DDS_u32CalcPhaseInc(DDS_FREQ_DEFAULT);
+  s_u32PhaseAcc = 0;
 }
 
 /* ====================================================================
  *  Waveform Control
  * ==================================================================== */
-void DDS_voidSetWaveform(u8 Copy_u8WaveType)
-{
-    if (Copy_u8WaveType < DDS_WAVE_COUNT) {
-        s_u8WaveType = Copy_u8WaveType;
-    }
+void DDS_voidSetWaveform(u8 Copy_u8WaveType) {
+  if (Copy_u8WaveType < DDS_WAVE_COUNT) {
+    s_u8WaveType = Copy_u8WaveType;
+  }
 }
 
-u8 DDS_u8GetWaveform(void)
-{
-    return s_u8WaveType;
+u8 DDS_u8GetWaveform(void) { return s_u8WaveType; }
+
+void DDS_voidCycleWaveform(void) {
+  u8 local_u8Next = s_u8WaveType + 1U;
+  if (local_u8Next >= DDS_WAVE_COUNT) {
+    local_u8Next = 0U;
+  }
+  s_u8WaveType = local_u8Next;
 }
 
-void DDS_voidCycleWaveform(void)
-{
-    u8 local_u8Next = s_u8WaveType + 1U;
-    if (local_u8Next >= DDS_WAVE_COUNT) {
-        local_u8Next = 0U;
-    }
-    s_u8WaveType = local_u8Next;
-}
-
-const char *DDS_pcGetWaveformName(void)
-{
-    return s_acWaveNames[s_u8WaveType];
-}
+const char *DDS_pcGetWaveformName(void) { return s_acWaveNames[s_u8WaveType]; }
 
 /* ====================================================================
  *  Frequency Control
  * ==================================================================== */
-void DDS_voidSetFrequency(u32 Copy_u32FreqHz)
-{
-    /* Clamp to valid range */
-    if (Copy_u32FreqHz < DDS_FREQ_MIN) {
-        Copy_u32FreqHz = DDS_FREQ_MIN;
-    }
-    if (Copy_u32FreqHz > DDS_FREQ_MAX) {
-        Copy_u32FreqHz = DDS_FREQ_MAX;
-    }
+void DDS_voidSetFrequency(u32 Copy_u32FreqHz) {
+  /* Clamp to valid range */
+  if (Copy_u32FreqHz < DDS_FREQ_MIN) {
+    Copy_u32FreqHz = DDS_FREQ_MIN;
+  }
+  if (Copy_u32FreqHz > DDS_FREQ_MAX) {
+    Copy_u32FreqHz = DDS_FREQ_MAX;
+  }
 
-    s_u32CurrentFreqHz = Copy_u32FreqHz;
+  s_u32CurrentFreqHz = Copy_u32FreqHz;
 
-    /* Compute new phase increment (64-bit intermediate) */
-    u32 local_u32NewInc = DDS_u32CalcPhaseInc(Copy_u32FreqHz);
+  /* Compute new phase increment (64-bit intermediate) */
+  u32 local_u32NewInc = DDS_u32CalcPhaseInc(Copy_u32FreqHz);
 
-    /* Atomic write — the ISR reads s_u32PhaseInc as a 32-bit value,
-     * and on an 8-bit AVR this is NOT atomic (4 byte reads).
-     * We must disable interrupts briefly. */
-    u8 local_u8Sreg = SREG;
-    cli();
-    s_u32PhaseInc = local_u32NewInc;
-    SREG = local_u8Sreg;
-
-
+  /* Atomic write — the ISR reads s_u32PhaseInc as a 32-bit value,
+   * and on an 8-bit AVR this is NOT atomic (4 byte reads).
+   * We must disable interrupts briefly. */
+  u8 local_u8Sreg = SREG;
+  cli();
+  s_u32PhaseInc = local_u32NewInc;
+  SREG = local_u8Sreg;
 }
 
-u32 DDS_u32GetFrequency(void)
-{
-    return s_u32CurrentFreqHz;
+u32 DDS_u32GetFrequency(void) { return s_u32CurrentFreqHz; }
+
+void DDS_voidIncrementFrequency(void) {
+  u32 local_u32Step = DDS_u32GetStep(s_u32CurrentFreqHz);
+  u32 local_u32NewFreq = s_u32CurrentFreqHz + local_u32Step;
+
+  if (local_u32NewFreq > DDS_FREQ_MAX) {
+    local_u32NewFreq = DDS_FREQ_MAX;
+  }
+
+  DDS_voidSetFrequency(local_u32NewFreq);
 }
 
-void DDS_voidIncrementFrequency(void)
-{
-    u32 local_u32Step = DDS_u32GetStep(s_u32CurrentFreqHz);
-    u32 local_u32NewFreq = s_u32CurrentFreqHz + local_u32Step;
+void DDS_voidDecrementFrequency(void) {
+  u32 local_u32Step = DDS_u32GetStep(s_u32CurrentFreqHz);
 
-    if (local_u32NewFreq > DDS_FREQ_MAX) {
-        local_u32NewFreq = DDS_FREQ_MAX;
-    }
-
-    DDS_voidSetFrequency(local_u32NewFreq);
-}
-
-void DDS_voidDecrementFrequency(void)
-{
-    u32 local_u32Step = DDS_u32GetStep(s_u32CurrentFreqHz);
-
-    if (s_u32CurrentFreqHz <= local_u32Step) {
-        DDS_voidSetFrequency(DDS_FREQ_MIN);
-    } else {
-        DDS_voidSetFrequency(s_u32CurrentFreqHz - local_u32Step);
-    }
+  if (s_u32CurrentFreqHz <= local_u32Step) {
+    DDS_voidSetFrequency(DDS_FREQ_MIN);
+  } else {
+    DDS_voidSetFrequency(s_u32CurrentFreqHz - local_u32Step);
+  }
 }
 
 /* ====================================================================
@@ -232,51 +206,50 @@ void DDS_voidDecrementFrequency(void)
  *    - NO loops or string ops
  *    - ONLY: accumulate → index → lookup → output
  * ==================================================================== */
-ISR(TIMER0_COMP_vect)
-{
-    /* 1. Advance phase accumulator */
-    s_u32PhaseAcc += s_u32PhaseInc;
+ISR(TIMER0_COMP_vect) {
+  /* 1. Advance phase accumulator */
+  s_u32PhaseAcc += s_u32PhaseInc;
 
-    /* 2. Extract upper 8 bits as LUT index */
-    u8 local_u8Index = (u8)(s_u32PhaseAcc >> DDS_LUT_INDEX_SHIFT);
+  /* 2. Extract upper 8 bits as LUT index */
+  u8 local_u8Index = (u8)(s_u32PhaseAcc >> DDS_LUT_INDEX_SHIFT);
 
-    /* 3. Generate waveform sample based on type */
-    u8 local_u8Sample;
+  /* 3. Generate waveform sample based on type */
+  u8 local_u8Sample;
 
-    switch (s_u8WaveType) {
+  switch (s_u8WaveType) {
 
-    case DDS_WAVE_SINE:
-        local_u8Sample = pgm_read_byte(&DDS_au8SineLUT[local_u8Index]);
-        break;
+  case DDS_WAVE_SINE:
+    local_u8Sample = pgm_read_byte(&DDS_au8SineLUT[local_u8Index]);
+    break;
 
-    case DDS_WAVE_TRIANGLE:
-        /* Rising ramp 0→254 for index 0→127, falling 254→0 for 128→255 */
-        if (local_u8Index < 128U) {
-            local_u8Sample = (u8)(local_u8Index << 1);
-        } else {
-            local_u8Sample = (u8)((255U - local_u8Index) << 1);
-        }
-        break;
-
-    case DDS_WAVE_SQUARE:
-        /* MSB of accumulator determines high/low */
-        local_u8Sample = (s_u32PhaseAcc & DDS_PHASE_MSB_MASK) ? 255U : 0U;
-        break;
-
-    case DDS_WAVE_SAWTOOTH:
-        /* Upper byte of accumulator IS the sawtooth */
-        local_u8Sample = local_u8Index;
-        break;
-
-    case DDS_WAVE_SADDLE:
-        local_u8Sample = pgm_read_byte(&DDS_au8SaddleLUT[local_u8Index]);
-        break;
-
-    default:
-        local_u8Sample = 128U;  /* Mid-scale fallback */
-        break;
+  case DDS_WAVE_TRIANGLE:
+    /* Rising ramp 0→254 for index 0→127, falling 254→0 for 128→255 */
+    if (local_u8Index < 128U) {
+      local_u8Sample = (u8)(local_u8Index << 1);
+    } else {
+      local_u8Sample = (u8)((255U - local_u8Index) << 1);
     }
+    break;
 
-    /* 4. Output to DAC via Timer1 OCR1A (Fast PWM) */
-    OCR1A = local_u8Sample;
+  case DDS_WAVE_SQUARE:
+    /* MSB of accumulator determines high/low */
+    local_u8Sample = (s_u32PhaseAcc & DDS_PHASE_MSB_MASK) ? 255U : 0U;
+    break;
+
+  case DDS_WAVE_SAWTOOTH:
+    /* Upper byte of accumulator IS the sawtooth */
+    local_u8Sample = local_u8Index;
+    break;
+
+  case DDS_WAVE_SADDLE:
+    local_u8Sample = pgm_read_byte(&DDS_au8SaddleLUT[local_u8Index]);
+    break;
+
+  default:
+    local_u8Sample = 128U; /* Mid-scale fallback */
+    break;
+  }
+
+  /* 4. Output to DAC via Timer1 OCR1A (Fast PWM) */
+  OCR1A = local_u8Sample;
 }

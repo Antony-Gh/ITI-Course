@@ -8,9 +8,9 @@
 #ifndef STD_TYPES_H_
 #define STD_TYPES_H_
 
-/* CPU Frequency — 16 MHz external crystal for Function Generator */
+/* CPU Frequency — 8 MHz internal oscillator for Function Generator */
 #ifndef F_CPU
-#define F_CPU 16000000UL
+#define F_CPU 8000000UL
 #endif
 
 /* Unsigned Standard Types */

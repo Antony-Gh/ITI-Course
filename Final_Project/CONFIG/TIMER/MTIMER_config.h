@@ -68,13 +68,13 @@
 /* ====================================================================
  *  Timer2 — System Tick (1 ms) for LCD, buttons, delays
  *
- *  16 MHz / 64 = 250,000 Hz timer clock
- *  250,000 / 1000 = 250 ticks per ms
- *  OCR2 = 250 - 1 = 249
+ *  8 MHz / 64 = 125,000 Hz timer clock
+ *  125,000 / 1000 = 125 ticks per ms
+ *  OCR2 = 125 - 1 = 124
  * ==================================================================== */
 #define MTIMER_TIMER2_ENABLE 1U
 #define MTIMER_TIMER2_MODE MTIMER_MODE_CTC
 #define MTIMER_TIMER2_PRESCALER MTIMER_PRESCALER_64
-#define MTIMER_TIMER2_OCR_VALUE 249U
+#define MTIMER_TIMER2_OCR_VALUE 124U
 
 #endif /* MTIMER_CONFIG_H_ */
