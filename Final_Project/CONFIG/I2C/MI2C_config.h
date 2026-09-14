@@ -8,7 +8,9 @@
 #ifndef CONFIG_I2C_MI2C_CONFIG_H_
 #define CONFIG_I2C_MI2C_CONFIG_H_
 
-#define MI2C_CPU_FREQUENCY       8000000UL
+#include "../../LIB/STD_TYPES.h"
+
+#define MI2C_CPU_FREQUENCY       F_CPU
 #define MI2C_SCL_FREQUENCY       100000UL
 
 /* Prescaler Value: it's just a variable to make it
