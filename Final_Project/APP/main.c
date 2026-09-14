@@ -189,88 +189,89 @@ int main(void)
     /* ---- Initial display ---- */
     APP_voidUpdateDisplay();
 
+    u32 local_u32LastLoopMs = 0U;
+
     /* ====================================================================
-     *  Super Loop
+     *  Super Loop (Non-Blocking Architecture)
      * ==================================================================== */
     while (1) {
-        /* ---- Scan I2C Keypad ---- */
-        local_u8Key = KPD_I2C_u8GetPressedKey();
-
-        if (local_u8Key != KPD_I2C_NOT_PRESSED) {
+        /* ---- Non-blocking 50 Hz UI tick (20 ms) ---- */
+        if (MTIMER_u8IsIntervalElapsed(&local_u32LastLoopMs, UI_UPDATE_PERIOD_MS) == OK) {
             
-            /* Numeric entry */
-            if (local_u8Key >= '0' && local_u8Key <= '9') {
-                if (!s_u8IsTyping) {
-                    s_u32TypedFreq = 0;
-                    s_u8IsTyping = 1U;
+            /* ---- Scan I2C Keypad ---- */
+            local_u8Key = KPD_I2C_u8GetPressedKey();
+
+            if (local_u8Key != KPD_I2C_NOT_PRESSED) {
+                
+                /* Numeric entry */
+                if (local_u8Key >= '0' && local_u8Key <= '9') {
+                    if (!s_u8IsTyping) {
+                        s_u32TypedFreq = 0;
+                        s_u8IsTyping = 1U;
+                    }
+                    /* Prevent overflow on extreme typing */
+                    if (s_u32TypedFreq < 1000000UL) {
+                        s_u32TypedFreq = (s_u32TypedFreq * 10) + (local_u8Key - '0');
+                    }
+                    s_u8DisplayDirty = 1U;
                 }
-                /* Prevent overflow on extreme typing */
-                if (s_u32TypedFreq < 1000000UL) {
-                    s_u32TypedFreq = (s_u32TypedFreq * 10) + (local_u8Key - '0');
+                /* Enter typed frequency */
+                else if (local_u8Key == 'E') {
+                    if (s_u8IsTyping) {
+                        DDS_voidSetFrequency(s_u32TypedFreq);
+                        s_u8IsTyping = 0U;
+                        APP_voidSaveSettings();
+                        s_u8DisplayDirty = 1U;
+                    }
                 }
-                s_u8DisplayDirty = 1U;
-            }
-            /* Enter typed frequency */
-            else if (local_u8Key == 'E') {
-                if (s_u8IsTyping) {
-                    DDS_voidSetFrequency(s_u32TypedFreq);
+                /* Clear typed frequency */
+                else if (local_u8Key == 'C') {
                     s_u8IsTyping = 0U;
+                    s_u32TypedFreq = 0;
+                    s_u8DisplayDirty = 1U;
+                }
+                /* Waveform cycle */
+                else if (local_u8Key == 'W') {
+                    DDS_voidCycleWaveform();
+                    APP_voidSaveSettings();
+                    s_u8DisplayDirty = 1U;
+                }
+                /* Explicit save */
+                else if (local_u8Key == 'S') {
+                    APP_voidSaveSettings();
+                    
+                    /* Visual feedback */
+                    HLCD_I2C_voidGoToXY(1,0);
+                    HLCD_I2C_voidSendString("   Saved!       ");
+                    /* Keep this small visual feedback blocking for simplicity, 
+                     * or use a non-blocking state machine. Since it's rare, blocking 500ms is ok */
+                    DELAY_voidMs(500);
+                    s_u8DisplayDirty = 1U;
+                }
+                /* Up / Down Stepping */
+                else if (local_u8Key == 'U') {
+                    DDS_voidIncrementFrequency();
+                    APP_voidSaveSettings();
+                    s_u8DisplayDirty = 1U;
+                }
+                else if (local_u8Key == 'D') {
+                    DDS_voidDecrementFrequency();
                     APP_voidSaveSettings();
                     s_u8DisplayDirty = 1U;
                 }
             }
-            /* Clear typed frequency */
-            else if (local_u8Key == 'C') {
-                s_u8IsTyping = 0U;
-                s_u32TypedFreq = 0;
-                s_u8DisplayDirty = 1U;
-            }
-            /* Waveform cycle */
-            else if (local_u8Key == 'W') {
-                DDS_voidCycleWaveform();
-                APP_voidSaveSettings();
-                s_u8DisplayDirty = 1U;
-            }
-            /* Explicit save */
-            else if (local_u8Key == 'S') {
-                APP_voidSaveSettings();
-                
-                /* Visual feedback */
-                HLCD_I2C_voidGoToXY(1,0);
-                HLCD_I2C_voidSendString("   Saved!       ");
-                DELAY_voidMs(500);
-                s_u8DisplayDirty = 1U;
-            }
-            /* Up / Down Stepping */
-            else if (local_u8Key == 'U') {
-                DDS_voidIncrementFrequency();
-                APP_voidSaveSettings();
-                s_u8DisplayDirty = 1U;
-            }
-            else if (local_u8Key == 'D') {
-                DDS_voidDecrementFrequency();
-                APP_voidSaveSettings();
-                s_u8DisplayDirty = 1U;
-            }
-            /* Direct Waveform Selection (Keys 1-5) 
-               Note: 1-5 are already caught by numeric entry above, 
-               so direct waveform selection conflicts with frequency typing.
-               We will stick to 'W' for waveform cycling to keep it simple. */
-        }
 
-        /* ---- Refresh LCD at reduced rate (10 Hz) to avoid I2C spam ---- */
-        s_u8LcdDivCounter++;
-        if (s_u8LcdDivCounter >= LCD_REFRESH_DIV) {
-            s_u8LcdDivCounter = 0U;
+            /* ---- Refresh LCD at reduced rate (10 Hz) to avoid I2C spam ---- */
+            s_u8LcdDivCounter++;
+            if (s_u8LcdDivCounter >= LCD_REFRESH_DIV) {
+                s_u8LcdDivCounter = 0U;
 
-            if (s_u8DisplayDirty) {
-                APP_voidUpdateDisplay();
-                s_u8DisplayDirty = 0U;
+                if (s_u8DisplayDirty) {
+                    APP_voidUpdateDisplay();
+                    s_u8DisplayDirty = 0U;
+                }
             }
         }
-
-        /* ---- Pace the main loop ---- */
-        DELAY_voidMs(UI_UPDATE_PERIOD_MS);
     }
 
     return 0;

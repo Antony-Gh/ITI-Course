@@ -51,17 +51,11 @@
 #define DDS_WAVE_COUNT          5U
 
 /* ====================================================================
- *  DAC Output Port
- *  PORTA (PA0..PA7) drives the 8-bit DAC0808
+ *  PWM Output Pin (Timer1 OC1A)
+ *  PD5 drives the RC Low-Pass Filter
  * ==================================================================== */
-#define DDS_DAC_PORT            DIO_PORTA
-
-/* ====================================================================
- *  Hardware Square Wave (Timer1 OC1A on PD5)
- *  Timer1 CTC toggle mode, Prescaler = 1
- *  f_square = F_CPU / (2 * N * (OCR1A + 1))
- * ==================================================================== */
-#define DDS_HW_SQUARE_ENABLE    1U
+#define DDS_PWM_PORT            DIO_PORTD
+#define DDS_PWM_PIN             DIO_PIN5
 
 /* ====================================================================
  *  Frequency Step Sizes

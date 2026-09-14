@@ -38,12 +38,14 @@
 #define DDS_TCCR0_CONFIG  ((1U << 3) | (1U << 0))   /* WGM01 | CS00 */
 
 /* ====================================================================
- *  Timer1 CTC Toggle Configuration (Hardware Square Wave)
+ *  Timer1 8-bit Fast PWM Configuration (PWM DAC on OC1A/PD5)
  *
- *  TCCR1A: COM1A0 = bit 6 → Toggle OC1A on compare match
- *  TCCR1B: WGM12 = bit 3 (CTC mode), CS10 = bit 0 (prescaler 1)
+ *  TCCR1A: COM1A1 = bit 7 (Clear OC1A on match, Non-inverting)
+ *          WGM10  = bit 0 (Fast PWM 8-bit)
+ *  TCCR1B: WGM12  = bit 3 (Fast PWM 8-bit)
+ *          CS10   = bit 0 (Prescaler = 1 -> 62.5 kHz PWM)
  * ==================================================================== */
-#define DDS_TCCR1A_CONFIG  (1U << 6)                  /* COM1A0 */
-#define DDS_TCCR1B_CONFIG  ((1U << 3) | (1U << 0))    /* WGM12 | CS10 */
+#define DDS_TCCR1A_CONFIG  ((1U << 7) | (1U << 0))    /* COM1A1 | WGM10 */
+#define DDS_TCCR1B_CONFIG  ((1U << 3) | (1U << 0))    /* WGM12  | CS10  */
 
 #endif /* DDS_PRIVATE_H_ */

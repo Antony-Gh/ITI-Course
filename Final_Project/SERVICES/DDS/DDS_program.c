@@ -97,35 +97,21 @@ static u32 DDS_u32GetStep(u32 Copy_u32FreqHz)
  *  f_square = F_CPU / (2 * 1 * (OCR1A + 1))
  *  OCR1A = (F_CPU / (2 * f_desired)) - 1
  * ==================================================================== */
-#if DDS_HW_SQUARE_ENABLE
-static void DDS_voidUpdateHwSquare(u32 Copy_u32FreqHz)
-{
-    if (Copy_u32FreqHz == 0UL) {
-        return;
-    }
-
-    u32 local_u32Ocr = (F_CPU / (2UL * Copy_u32FreqHz)) - 1UL;
-
-    /* Clamp to 16-bit range */
-    if (local_u32Ocr > 65535UL) {
-        local_u32Ocr = 65535UL;
-    }
-
-    u8 local_u8Sreg = SREG;
-    cli();
-    OCR1A = (u16)local_u32Ocr;
-    SREG = local_u8Sreg;
-}
-#endif
+/* Removed DDS_voidUpdateHwSquare since Timer1 is now the DAC */
 
 /* ====================================================================
  *  Initialization
  * ==================================================================== */
 void DDS_voidInit(void)
 {
-    /* ---- Configure PORTA as output for DAC ---- */
-    DDRA = 0xFF;     /* All 8 bits output */
-    PORTA = 128U;    /* Mid-scale (0V DC offset) */
+    /* ---- Configure PD5 (OC1A) as output for PWM DAC ---- */
+    SET_BIT(DDRD, 5U);
+
+    /* ---- Timer1: 8-bit Fast PWM mode on OC1A (PD5) ---- */
+    TCCR1A = DDS_TCCR1A_CONFIG;
+    TCCR1B = DDS_TCCR1B_CONFIG;
+    TCNT1  = 0U;
+    OCR1A  = 128U;   /* Mid-scale (0V DC offset) */
 
     /* ---- Timer0: CTC mode, prescaler = 1, OCR0 = 255 ---- */
     /*   TCCR0 = WGM01 (CTC) | CS00 (prescaler 1)            */
@@ -136,24 +122,13 @@ void DDS_voidInit(void)
     /* Enable Timer0 Compare Match interrupt */
     SET_BIT(TIMSK, OCIE0);
 
-#if DDS_HW_SQUARE_ENABLE
-    /* ---- Timer1: CTC toggle on OC1A (PD5) ---- */
-    /*   Toggle OC1A on compare match             */
-    SET_BIT(DDRD, 5U);   /* PD5 = OC1A → output */
-    TCCR1A = DDS_TCCR1A_CONFIG;
-    TCCR1B = DDS_TCCR1B_CONFIG;
-    TCNT1  = 0U;
-#endif
-
     /* ---- Set default waveform and frequency ---- */
     s_u8WaveType     = DDS_WAVE_SINE;
     s_u32CurrentFreqHz = DDS_FREQ_DEFAULT;
     s_u32PhaseInc    = DDS_u32CalcPhaseInc(DDS_FREQ_DEFAULT);
     s_u32PhaseAcc    = 0;
 
-#if DDS_HW_SQUARE_ENABLE
-    DDS_voidUpdateHwSquare(DDS_FREQ_DEFAULT);
-#endif
+
 }
 
 /* ====================================================================
@@ -211,9 +186,7 @@ void DDS_voidSetFrequency(u32 Copy_u32FreqHz)
     s_u32PhaseInc = local_u32NewInc;
     SREG = local_u8Sreg;
 
-#if DDS_HW_SQUARE_ENABLE
-    DDS_voidUpdateHwSquare(Copy_u32FreqHz);
-#endif
+
 }
 
 u32 DDS_u32GetFrequency(void)
@@ -304,6 +277,6 @@ ISR(TIMER0_COMP_vect)
         break;
     }
 
-    /* 4. Output to DAC via PORTA (direct register write — fastest) */
-    PORTA = local_u8Sample;
+    /* 4. Output to DAC via Timer1 OCR1A (Fast PWM) */
+    OCR1A = local_u8Sample;
 }
