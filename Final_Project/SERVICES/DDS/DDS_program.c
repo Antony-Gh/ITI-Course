@@ -59,14 +59,12 @@ static const char s_acWaveNames[DDS_WAVE_COUNT][9] = {
 static u32 DDS_u32CalcPhaseInc(u32 Copy_u32FreqHz) {
   /*
    * phaseInc = (f * 2^32) / Fs
-   *
-   * Use 64-bit intermediate to prevent overflow.
-   * For f = 20,000 Hz:
-   *   20000 * 4294967296 = 85,899,345,920,000 — fits in u64.
-   *   / 62500 = 1,374,389,534
+   * 
+   * Fs = F_CPU / 256 (Timer1 Fast PWM overflow rate)
+   * phaseInc = (f * 2^32 * 256) / F_CPU
    */
-  u64 local_u64Temp = (u64)Copy_u32FreqHz * DDS_PHASE_ACC_FULL_SCALE;
-  return (u32)(local_u64Temp / DDS_SAMPLE_RATE);
+  u64 local_u64Temp = (u64)Copy_u32FreqHz * DDS_PHASE_ACC_FULL_SCALE * 256ULL;
+  return (u32)(local_u64Temp / F_CPU);
 }
 
 /* ====================================================================
@@ -105,14 +103,8 @@ void DDS_voidInit(void) {
   TCNT1 = 0U;
   OCR1A = 128U; /* Mid-scale (0V DC offset) */
 
-  /* ---- Timer0: CTC mode, prescaler = 1, OCR0 = 255 ---- */
-  /*   TCCR0 = WGM01 (CTC) | CS00 (prescaler 1)            */
-  TCCR0 = DDS_TCCR0_CONFIG;
-  OCR0 = DDS_TIMER0_OCR_VALUE;
-  TCNT0 = 0U;
-
-  /* Enable Timer0 Compare Match interrupt */
-  SET_BIT(TIMSK, OCIE0);
+  /* Enable Timer1 Overflow interrupt (Sample Clock directly tied to PWM cycle) */
+  SET_BIT(TIMSK, TOIE1);
 
   /* ---- Set default waveform and frequency ---- */
   s_u8WaveType = DDS_WAVE_SINE;
@@ -192,11 +184,10 @@ void DDS_voidDecrementFrequency(void) {
 }
 
 /* ====================================================================
- *  Timer0 Compare Match ISR — Waveform Sample Generation
+ *  Timer1 Overflow ISR — Waveform Sample Generation
  *
- *  This is the most time-critical code in the entire project.
- *  Called at 62,500 Hz (every 16 µs).
- *  Budget: ~74 cycles out of 256 available.
+ *  This ISR executes exactly once per PWM cycle (31,250 Hz),
+ *  ensuring perfect synchronization between the DDS and the DAC.
  *
  *  Rules:
  *    - NO LCD operations
@@ -206,7 +197,7 @@ void DDS_voidDecrementFrequency(void) {
  *    - NO loops or string ops
  *    - ONLY: accumulate → index → lookup → output
  * ==================================================================== */
-ISR(TIMER0_COMP_vect) {
+ISR(TIMER1_OVF_vect) {
   /* 1. Advance phase accumulator */
   s_u32PhaseAcc += s_u32PhaseInc;
 
