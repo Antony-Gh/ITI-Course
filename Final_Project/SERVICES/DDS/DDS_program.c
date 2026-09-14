@@ -24,10 +24,10 @@
 
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
+#include <avr/io.h>
 
 #include "../../LIB/BIT_MATH.h"
 #include "../../LIB/STD_TYPES.h"
-#include "../../LIB/REGISTERS.h"
 
 #include "../../CONFIG/DDS/DDS_config.h"
 #include "../../HW/DDS/DDS_private.h"
