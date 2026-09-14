@@ -97,6 +97,10 @@ void DDS_voidInit(void) {
   /* ---- Configure PD5 (OC1A) as output for PWM DAC ---- */
   SET_BIT(DDRD, 5U);
 
+  /* ---- Configure PD4 as output for raw Square/Sync wave ---- */
+  SET_BIT(DDS_SYNC_DDR, DDS_SYNC_PIN);
+  CLR_BIT(DDS_SYNC_PORT, DDS_SYNC_PIN);
+
   /* ---- Timer1: 8-bit Fast PWM mode on OC1A (PD5) ---- */
   TCCR1A = DDS_TCCR1A_CONFIG;
   TCCR1B = DDS_TCCR1B_CONFIG;
@@ -119,6 +123,11 @@ void DDS_voidInit(void) {
 void DDS_voidSetWaveform(u8 Copy_u8WaveType) {
   if (Copy_u8WaveType < DDS_WAVE_COUNT) {
     s_u8WaveType = Copy_u8WaveType;
+    
+    /* Ensure sync pin is cleared if not generating a square wave */
+    if (Copy_u8WaveType != DDS_WAVE_SQUARE) {
+      CLR_BIT(DDS_SYNC_PORT, DDS_SYNC_PIN);
+    }
   }
 }
 
@@ -129,7 +138,7 @@ void DDS_voidCycleWaveform(void) {
   if (local_u8Next >= DDS_WAVE_COUNT) {
     local_u8Next = 0U;
   }
-  s_u8WaveType = local_u8Next;
+  DDS_voidSetWaveform(local_u8Next);
 }
 
 const char *DDS_pcGetWaveformName(void) { return s_acWaveNames[s_u8WaveType]; }
@@ -224,7 +233,13 @@ ISR(TIMER1_OVF_vect) {
 
   case DDS_WAVE_SQUARE:
     /* MSB of accumulator determines high/low */
-    local_u8Sample = (s_u32PhaseAcc & DDS_PHASE_MSB_MASK) ? 255U : 0U;
+    if (s_u32PhaseAcc & DDS_PHASE_MSB_MASK) {
+      local_u8Sample = 255U;
+      SET_BIT(DDS_SYNC_PORT, DDS_SYNC_PIN);
+    } else {
+      local_u8Sample = 0U;
+      CLR_BIT(DDS_SYNC_PORT, DDS_SYNC_PIN);
+    }
     break;
 
   case DDS_WAVE_SAWTOOTH:

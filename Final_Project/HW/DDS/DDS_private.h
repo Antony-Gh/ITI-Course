@@ -12,6 +12,15 @@
 #define DDS_PRIVATE_H_
 
 #include "../../CONFIG/DDS/DDS_config.h"
+
+/* ====================================================================
+ *  Digital Sync (Square Wave) Pin Macros
+ *  PD4 is used to bypass the analog RC filter for perfectly sharp
+ *  square waves on real hardware.
+ * ==================================================================== */
+#define DDS_SYNC_DDR    DDRD
+#define DDS_SYNC_PORT   PORTD
+#define DDS_SYNC_PIN    4U
 #include "../../LIB/STD_TYPES.h"
 
 /* ====================================================================
