@@ -8,6 +8,7 @@
 #ifndef HDCMOTOR_CONFIG_H_
 #define HDCMOTOR_CONFIG_H_
 
+#include "../../LIB/STD_TYPES.h"
 #include "../../MCAL/DIO/MDIO_interface.h"
 
 #define HDCMOTOR_RELAY_PORT DIO_PORTD
@@ -19,9 +20,5 @@
 
 /* Delay between relay de-energize and next energize */
 #define HDCMOTOR_RELAY_SWITCH_DELAY_MS 50U
-
-#ifndef F_CPU
-#define F_CPU 8000000UL
-#endif
 
 #endif /* HDCMOTOR_CONFIG_H_ */

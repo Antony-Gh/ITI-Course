@@ -8,9 +8,7 @@
 #ifndef MADC_CONFIG_H_
 #define MADC_CONFIG_H_
 
-#ifndef F_CPU
-#define F_CPU 8000000UL
-#endif
+#include "../../LIB/STD_TYPES.h"
 
 /*
  * Reference Voltage Selection
@@ -23,7 +21,7 @@
 
 /*
  * ADC Prescaler Selection
- * Target ADC clock: 50 kHz - 200 kHz (8 MHz / 64 = 125 kHz)
+ * Target ADC clock: 50 kHz - 200 kHz (16 MHz / 128 = 125 kHz)
  * Options:
  *   - 0U : ADC_PRESCALER_2
  *   - 1U : ADC_PRESCALER_4
@@ -33,7 +31,7 @@
  *   - 5U : ADC_PRESCALER_64
  *   - 6U : ADC_PRESCALER_128
  */
-#define ADC_PRESCALER 5U
+#define ADC_PRESCALER 6U
 
 /*
  * Result Alignment

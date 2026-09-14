@@ -1,153 +1,196 @@
 /*
  * main.c
  *
- *  Created on : Sep 11, 2026
+ *  Created on : Sep 14, 2026
  *      Author : Anthony Gaius
+ *
+ *  ATmega32A Function / Waveform Generator
+ *  ITI Embedded Systems — Final Project
+ *
+ *  Architecture:
+ *    - Timer0 CTC ISR @ 62.5 kHz → DDS phase accumulator → LUT → PORTA (DAC0808)
+ *    - Timer1 CTC toggle → OC1A (PD5) hardware square wave (jitter-free)
+ *    - Timer2 CTC → 1 ms system tick for LCD, buttons, delays
+ *    - 3 push-buttons: Waveform cycle (PD2), Freq+ (PD3), Freq- (PD4)
+ *    - 16×2 LCD in 4-bit mode on PORTC
+ *    - Amplitude control via passive potentiometer in output stage
+ *
+ *  Main loop runs at ~50 Hz (20 ms period):
+ *    1. Poll and debounce buttons
+ *    2. Check for edge events (press detection)
+ *    3. Update DDS waveform/frequency as needed
+ *    4. Refresh LCD display
  */
 
-#include "../SERVICES/FreeRTOS/FreeRTOS.h"
-#include "../SERVICES/FreeRTOS/semphr.h"
-#include "../SERVICES/FreeRTOS/task.h"
-
 #ifndef F_CPU
-#define F_CPU 8000000UL
+#define F_CPU 16000000UL
 #endif
 
-#include "../HAL/LCD/HLCD_interface.h"
+#include <avr/interrupt.h>
+
 #include "../LIB/BIT_MATH.h"
-#include "../LIB/DELAY.h"
 #include "../LIB/STD_TYPES.h"
+
 #include "../MCAL/DIO/MDIO_interface.h"
-#include "../MCAL/EXTI/MEXTI_interface.h"
+#include "../MCAL/TIMER/MTIMER_interface.h"
 
-#define STACK_LED 150U
-#define STACK_BUTTON 250U
+#include "../HAL/LCD/HLCD_interface.h"
+#include "../HAL/PB/HPB_interface.h"
 
-#define LED1_PERIOD_MS 1000U
-#define LED2_PERIOD_MS 3000U
-#define LED3_PERIOD_MS 5000U
+#include "../SERVICES/DDS/DDS_interface.h"
 
-#define PRIORITY_LED 1U
-#define PRIORITY_BUTTON 2U
+/* ====================================================================
+ *  Button Definitions
+ * ==================================================================== */
+#define BTN_WAVE_PORT       DIO_PORTD
+#define BTN_WAVE_PIN        DIO_PIN2
 
-SemaphoreHandle_t xButtonSem = NULL;
+#define BTN_FREQ_UP_PORT    DIO_PORTD
+#define BTN_FREQ_UP_PIN     DIO_PIN3
 
-static TaskHandle_t xLed1Handle = NULL;
-static TaskHandle_t xLed2Handle = NULL;
-static TaskHandle_t xLed3Handle = NULL;
+#define BTN_FREQ_DOWN_PORT  DIO_PORTD
+#define BTN_FREQ_DOWN_PIN   DIO_PIN4
 
-void Button_ISR(void) {
+/* ====================================================================
+ *  UI Update Rate
+ * ==================================================================== */
+#define UI_UPDATE_PERIOD_MS  20U    /* 50 Hz main loop */
+#define LCD_REFRESH_DIV      5U     /* LCD refreshed every 5th loop = 10 Hz */
 
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+/* ====================================================================
+ *  Module-level variables
+ * ==================================================================== */
+static HPB_t s_stBtnWave;
+static HPB_t s_stBtnUp;
+static HPB_t s_stBtnDown;
 
-  // Give the counting semaphore
-  xSemaphoreGiveFromISR(xButtonSem, &xHigherPriorityTaskWoken);
+static u8 s_u8LcdDivCounter = 0U;
+static u8 s_u8DisplayDirty  = 1U;  /* Force initial display update */
 
-  (void)xHigherPriorityTaskWoken;
+/* ====================================================================
+ *  Private: Update LCD display with current waveform and frequency
+ * ==================================================================== */
+static void APP_voidUpdateDisplay(void)
+{
+    /* Row 0: Waveform name */
+    HLCD_voidGoToXY(0, 0);
+    HLCD_voidSendString("WAVE: ");
+    HLCD_voidSendString(DDS_pcGetWaveformName());
+
+    /* Pad with spaces to clear leftover characters */
+    HLCD_voidSendString("        ");
+
+    /* Row 1: Frequency */
+    HLCD_voidGoToXY(1, 0);
+    HLCD_voidSendString("FREQ: ");
+    HLCD_voidSendFrequency(DDS_u32GetFrequency());
+
+    /* Pad with spaces */
+    HLCD_voidSendString("     ");
 }
 
-void vTaskLCD(void *pvParameters) {
-  (void)pvParameters;
+/* ====================================================================
+ *  Private: Splash screen on boot
+ * ==================================================================== */
+static void APP_voidSplashScreen(void)
+{
+    HLCD_voidGoToXY(0, 0);
+    HLCD_voidSendString("  Function Gen  ");
+    HLCD_voidGoToXY(1, 0);
+    HLCD_voidSendString("  ITI Project   ");
+    MTIMER_voidDelayMs(1500);
+    HLCD_voidClearScreen();
+}
 
-  while (1) {
-    if (xSemaphoreTake(xButtonSem, portMAX_DELAY) == pdTRUE) {
-      HLCD_voidClearScreen();
-      HLCD_voidSendStringTypingEffect("Button Pressed", 20);
-      vTaskDelay(1000);
-      HLCD_voidClearScreen();
+/* ====================================================================
+ *  Main Entry Point
+ * ==================================================================== */
+int main(void)
+{
+    u8 local_u8Edge = HPB_EDGE_NONE;
+
+    /* ---- Initialize DIO (configures all port directions/values) ---- */
+    DIO_voidInit();
+
+    /* ---- Initialize Timer2 for system tick (1 ms) ---- */
+    MTIMER_voidInit();
+
+    /* ---- Initialize LCD (4-bit mode on PORTC) ---- */
+    HLCD_voidInit();
+
+    /* ---- Initialize push-buttons (active-low with internal pull-up) ---- */
+    HPB_enumInit(&s_stBtnWave, BTN_WAVE_PORT, BTN_WAVE_PIN, HPB_PULL_UP);
+    HPB_enumInit(&s_stBtnUp,   BTN_FREQ_UP_PORT, BTN_FREQ_UP_PIN, HPB_PULL_UP);
+    HPB_enumInit(&s_stBtnDown, BTN_FREQ_DOWN_PORT, BTN_FREQ_DOWN_PIN, HPB_PULL_UP);
+
+    /* ---- Show splash screen ---- */
+    APP_voidSplashScreen();
+
+    /* ---- Initialize DDS engine ---- */
+    /*   Configures Timer0 CTC for sample clock,
+     *   Timer1 CTC toggle for HW square wave,
+     *   PORTA as DAC output,
+     *   Default: SINE @ 1 kHz */
+    DDS_voidInit();
+
+    /* ---- Enable global interrupts — waveform generation starts! ---- */
+    sei();
+
+    /* ---- Initial display ---- */
+    APP_voidUpdateDisplay();
+
+    /* ====================================================================
+     *  Super Loop
+     *
+     *  Runs at ~50 Hz (20 ms per iteration).
+     *  The waveform generation is entirely handled by the Timer0 ISR;
+     *  this loop only handles user interface.
+     * ==================================================================== */
+    while (1) {
+
+        /* ---- Debounce all buttons ---- */
+        HPB_voidUpdate(&s_stBtnWave);
+        HPB_voidUpdate(&s_stBtnUp);
+        HPB_voidUpdate(&s_stBtnDown);
+
+        /* ---- Check WAVE button (PD2) ---- */
+        if (HPB_enumGetEdge(&s_stBtnWave, &local_u8Edge) == OK) {
+            if (local_u8Edge == HPB_EDGE_PRESSED) {
+                DDS_voidCycleWaveform();
+                s_u8DisplayDirty = 1U;
+            }
+        }
+
+        /* ---- Check FREQ UP button (PD3) ---- */
+        if (HPB_enumGetEdge(&s_stBtnUp, &local_u8Edge) == OK) {
+            if (local_u8Edge == HPB_EDGE_PRESSED) {
+                DDS_voidIncrementFrequency();
+                s_u8DisplayDirty = 1U;
+            }
+        }
+
+        /* ---- Check FREQ DOWN button (PD4) ---- */
+        if (HPB_enumGetEdge(&s_stBtnDown, &local_u8Edge) == OK) {
+            if (local_u8Edge == HPB_EDGE_PRESSED) {
+                DDS_voidDecrementFrequency();
+                s_u8DisplayDirty = 1U;
+            }
+        }
+
+        /* ---- Refresh LCD at reduced rate (10 Hz) to avoid flicker ---- */
+        s_u8LcdDivCounter++;
+        if (s_u8LcdDivCounter >= LCD_REFRESH_DIV) {
+            s_u8LcdDivCounter = 0U;
+
+            if (s_u8DisplayDirty) {
+                APP_voidUpdateDisplay();
+                s_u8DisplayDirty = 0U;
+            }
+        }
+
+        /* ---- Pace the main loop ---- */
+        MTIMER_voidDelayMs(UI_UPDATE_PERIOD_MS);
     }
-  }
-}
 
-void vTaskLed1(void *pvParameters) {
-  (void)pvParameters;
-
-  while (1) {
-    DIO_enumTogglePinValue(DIO_PORTD, DIO_PIN5);
-    vTaskDelay(LED1_PERIOD_MS);
-  }
-}
-
-void vTaskLed2(void *pvParameters) {
-  (void)pvParameters;
-
-  while (1) {
-    DIO_enumTogglePinValue(DIO_PORTD, DIO_PIN6);
-    vTaskDelay(LED2_PERIOD_MS);
-  }
-}
-
-void vTaskLed3(void *pvParameters) {
-  (void)pvParameters;
-
-  while (1) {
-    DIO_enumTogglePinValue(DIO_PORTD, DIO_PIN7);
-    vTaskDelay(LED3_PERIOD_MS);
-  }
-}
-
-int main(void) {
-  BaseType_t xStatus;
-
-  DIO_voidInit();
-
-  DIO_enumSetPinDirection(DIO_PORTD, DIO_PIN5, DIO_OUTPUT);
-  DIO_enumSetPinDirection(DIO_PORTD, DIO_PIN6, DIO_OUTPUT);
-  DIO_enumSetPinDirection(DIO_PORTD, DIO_PIN7, DIO_OUTPUT);
-  DIO_enumSetPinValue(DIO_PORTD, DIO_PIN5, DIO_HIGH);
-  DIO_enumSetPinValue(DIO_PORTD, DIO_PIN6, DIO_HIGH);
-  DIO_enumSetPinValue(DIO_PORTD, DIO_PIN7, DIO_HIGH);
-
-  DIO_enumSetPinDirection(DIO_PORTD, DIO_PIN2, DIO_INPUT);
-  DIO_enumSetPinValue(DIO_PORTD, DIO_PIN2, DIO_HIGH);
-
-  xButtonSem = xSemaphoreCreateCounting(10, 0);
-  if (xButtonSem == NULL) {
-    while (1)
-      ;
-  }
-
-  HLCD_voidInit();
-
-  HLCD_voidSendStringTypingEffect("Initializing...", 20);
-  DELAY_voidMs(1000);
-  HLCD_voidClearScreen();
-
-  EXTI_voidInit();
-  EXTI_u8SetSense(EXTI_u8_INT0, EXTI_FALLING_EDGE);
-  EXTI_u8SetCallback(EXTI_u8_INT0, Button_ISR);
-  EXTI_voidEnableGlobal();
-
-  xStatus = xTaskCreate(vTaskLed1, "LED1", STACK_LED, NULL, PRIORITY_LED,
-                        &xLed1Handle);
-  if (xStatus != pdPASS) {
-    while (1)
-      ;
-  }
-
-  xStatus = xTaskCreate(vTaskLed2, "LED2", STACK_LED, NULL, PRIORITY_LED,
-                        &xLed2Handle);
-  if (xStatus != pdPASS) {
-    while (1)
-      ;
-  }
-
-  xStatus = xTaskCreate(vTaskLed3, "LED3", STACK_LED, NULL, PRIORITY_LED,
-                        &xLed3Handle);
-  if (xStatus != pdPASS) {
-    while (1)
-      ;
-  }
-
-  xStatus =
-      xTaskCreate(vTaskLCD, "LCD", STACK_BUTTON, NULL, PRIORITY_BUTTON, NULL);
-  if (xStatus != pdPASS) {
-    while (1)
-      ;
-  }
-
-  vTaskStartScheduler();
-  while (1)
-    ;
-  return 0;
+    return 0;
 }

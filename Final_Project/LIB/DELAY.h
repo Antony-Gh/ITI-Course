@@ -3,7 +3,7 @@
  *
  *  Timer-free blocking delays for AVR.
  *
- *  Uses AVR-GCC's built-in __builtin_avr_delay_cycles() — no external
+ *  Uses AVR-GCC's built-in __builtin_avr_delay_cycles() ï¿½ no external
  *  header, no timer, no interrupt. Pure CPU busy-wait.
  *
  *  Requirements:
@@ -13,17 +13,13 @@
  *        into a loop of small constant delays.
  *
  *  WARNING: These functions BLOCK the CPU. Never call them from
- *           inside a FreeRTOS task — use vTaskDelay() there.
+ *           inside a FreeRTOS task ï¿½ use vTaskDelay() there.
  *           Use them only in drivers / init code that runs before
  *           the scheduler starts or when blocking is acceptable.
  */
 
 #ifndef DELAY_H_
 #define DELAY_H_
-
-#ifndef F_CPU
-#define F_CPU 8000000UL
-#endif
 
 #include "../LIB/STD_TYPES.h"
 
@@ -37,8 +33,8 @@
 /* -----------------------------------------------------------------
  * Microsecond delay
  *   Each iteration burns DELAY_CYCLES_PER_US cycles (constant).
- *   The while-loop overhead adds ~3–5 cycles per iteration, which
- *   slightly LENGTHENS the delay — safe for setup/hold timings.
+ *   The while-loop overhead adds ~3ï¿½5 cycles per iteration, which
+ *   slightly LENGTHENS the delay ï¿½ safe for setup/hold timings.
  * ----------------------------------------------------------------- */
 static inline void DELAY_voidUs(u16 Copy_u16Us)
 {

@@ -3,14 +3,23 @@
  *
  *  Created on: Aug 30, 2026
  *      Author: Anthony Gaius
+ *
+ *  Timer configuration for the Function Generator project.
+ *
+ *  Timer0: Reserved for DDS sample clock (configured by DDS_program.c)
+ *          → NOT enabled here to avoid conflict.
+ *
+ *  Timer1: Reserved for hardware square wave on OC1A (configured by DDS_program.c)
+ *          → NOT enabled here to avoid conflict.
+ *
+ *  Timer2: System tick — 1 ms CTC at 16 MHz, prescaler 64
+ *          OCR2 = (16,000,000 / (64 * 1000)) - 1 = 249
  */
 
 #ifndef MTIMER_CONFIG_H_
 #define MTIMER_CONFIG_H_
 
-#ifndef F_CPU
-#define F_CPU 8000000UL
-#endif
+#include "../../LIB/STD_TYPES.h"
 
 /* Timer IDs */
 #define MTIMER_TIMER0 0U
@@ -37,37 +46,35 @@
 #define MTIMER1_PRESCALER_256 3U
 #define MTIMER1_PRESCALER_1024 4U
 
-/*
- * Timer0 1 ms tick (CTC, 8 MHz, prescaler 64)
- * OCR0 = (F_CPU / (prescaler * 1000)) - 1 = 124
- * Application uses this tick to generate 50 Hz / 45% PWM on PB3.
- */
+/* ====================================================================
+ *  Timer0 — DISABLED (managed by DDS service)
+ * ==================================================================== */
 #define MTIMER_TIMER0_ENABLE 0U
-#define MTIMER_TIMER0_MODE MTIMER_MODE_FAST_PWM
-#define MTIMER_TIMER0_PRESCALER MTIMER_PRESCALER_64
-/*
-     With an 8 MHz CPU and a prescaler of 64, the timer frequency is 125 kHz (1
-   tick = 8 µs). To get a 1 ms tick, you need 125 ticks. Setting OCR0 to 124
-   means the timer counts from 0 to 124 (125 steps), taking exactly 1 ms.
-*/
-#define MTIMER_TIMER0_OCR_VALUE 124U
-#define MTIMER_TIMER0_PRESCALER_VALUE 64U
+#define MTIMER_TIMER0_MODE MTIMER_MODE_CTC
+#define MTIMER_TIMER0_PRESCALER MTIMER_PRESCALER_1
+#define MTIMER_TIMER0_OCR_VALUE 255U
+#define MTIMER_TIMER0_PRESCALER_VALUE 1U
 #define MTIMER_TICK_MS 1U
 
-/*
- * Timer1 free-running timebase for software ICU (Normal mode).
- * Tick = 8 * (1 / 8 MHz) = 1 us
- */
+/* ====================================================================
+ *  Timer1 — DISABLED (managed by DDS service for HW square wave)
+ * ==================================================================== */
 #define MTIMER_TIMER1_ENABLE 0U
-#define MTIMER_TIMER1_MODE MTIMER_MODE_NORMAL
-#define MTIMER_TIMER1_PRESCALER MTIMER1_PRESCALER_8
+#define MTIMER_TIMER1_MODE MTIMER_MODE_CTC
+#define MTIMER_TIMER1_PRESCALER MTIMER1_PRESCALER_1
 #define MTIMER_TIMER1_OCR1A_VALUE 0U
-#define MTIMER_TIMER1_PRESCALER_VALUE 8U
+#define MTIMER_TIMER1_PRESCALER_VALUE 1U
 
-/* Timer2 enabled as the 1ms System Tick for delay functions */
+/* ====================================================================
+ *  Timer2 — System Tick (1 ms) for LCD, buttons, delays
+ *
+ *  16 MHz / 64 = 250,000 Hz timer clock
+ *  250,000 / 1000 = 250 ticks per ms
+ *  OCR2 = 250 - 1 = 249
+ * ==================================================================== */
 #define MTIMER_TIMER2_ENABLE 1U
 #define MTIMER_TIMER2_MODE MTIMER_MODE_CTC
 #define MTIMER_TIMER2_PRESCALER MTIMER_PRESCALER_64
-#define MTIMER_TIMER2_OCR_VALUE 124U
+#define MTIMER_TIMER2_OCR_VALUE 249U
 
 #endif /* MTIMER_CONFIG_H_ */

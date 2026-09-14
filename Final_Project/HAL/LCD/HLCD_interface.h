@@ -3,6 +3,9 @@
  *
  *  Created on: Aug 25, 2026
  *      Author: Anthony Gaius
+ *
+ *  LCD HAL interface — supports both 4-bit and 8-bit modes
+ *  selected via HLCD_MODE in HLCD_config.h.
  */
 
 #ifndef HLCD_INTERFACE_H_
@@ -27,5 +30,11 @@ void HLCD_voidClearScreen(void);
 void HLCD_voidSendStringTypingEffect(const char* Copy_pcString, u32 Copy_u32DelayMs);
 
 void HLCD_voidCreateCustomChar(const u8* Copy_pu8Pattern, u8 Copy_u8Location);
+
+/*
+ * Display a frequency value formatted as "X.XX kHz" or "XXX Hz".
+ * Writes directly at the current cursor position.
+ */
+void HLCD_voidSendFrequency(u32 Copy_u32FreqHz);
 
 #endif /* HLCD_INTERFACE_H_ */

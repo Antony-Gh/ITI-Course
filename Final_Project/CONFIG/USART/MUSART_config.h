@@ -8,9 +8,7 @@
 #ifndef MUSART_CONFIG_H_
 #define MUSART_CONFIG_H_
 
-#ifndef F_CPU
-#define F_CPU 8000000UL
-#endif
+#include "../../LIB/STD_TYPES.h"
 
 /*
  * Baud rate used with the PC / Virtual Terminal.
