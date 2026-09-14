@@ -15,14 +15,14 @@
 
 /* ====================================================================
  *  Sample Clock Configuration
- *  Timer0 CTC, Prescaler = 1, OCR0 = 255
- *  Fs = 16,000,000 / (1 * (255 + 1)) = 62,500 Hz
+ *  Timer0 CTC, Prescaler = 8, OCR0 = 124
+ *  Fs = 16,000,000 / (8 * (124 + 1)) = 16,000 Hz
  * ==================================================================== */
-#define DDS_SAMPLE_RATE         62500UL
+#define DDS_SAMPLE_RATE         16000UL
 
 /* Timer0 settings for waveform sample generation */
-#define DDS_TIMER0_PRESCALER    1U
-#define DDS_TIMER0_OCR_VALUE    255U
+#define DDS_TIMER0_PRESCALER    8U
+#define DDS_TIMER0_OCR_VALUE    124U
 
 /* ====================================================================
  *  Phase Accumulator

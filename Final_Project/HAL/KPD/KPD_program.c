@@ -33,6 +33,9 @@ u8 KPD_u8ScanKey(void) {
     for (Local_u8RowIdx = 0; Local_u8RowIdx < KPD_NUM_ROWS; Local_u8RowIdx++) {
         /* Activate current row (Active LOW) */
         DIO_enumSetPinValue(KPD_PORT, Local_u8RowArr[Local_u8RowIdx], DIO_LOW);
+        
+        /* Tiny delay for signal to propagate through keypad matrix */
+        DELAY_voidUs(4);
 
         /* Read columns */
         for (Local_u8ColIdx = 0; Local_u8ColIdx < KPD_NUM_COLS; Local_u8ColIdx++) {
@@ -51,38 +54,17 @@ u8 KPD_u8ScanKey(void) {
 }
 
 u8 KPD_u8GetPressedKey(void) {
-    u8 Local_u8PressedKey = KPD_NOT_PRESSED;
-    u8 Local_u8PinState;
-    u8 Local_u8RowIdx;
-    u8 Local_u8ColIdx;
+    static u8 s_u8LastKey = KPD_NOT_PRESSED;
+    u8 Local_u8CurrentKey = KPD_u8ScanKey();
+    u8 Local_u8ValidKey = KPD_NOT_PRESSED;
 
-    Local_u8PressedKey = KPD_u8ScanKey();
-
-    if (Local_u8PressedKey != KPD_NOT_PRESSED) {
-        for (Local_u8RowIdx = 0; Local_u8RowIdx < KPD_NUM_ROWS; Local_u8RowIdx++) {
-            DIO_enumSetPinValue(KPD_PORT, Local_u8RowArr[Local_u8RowIdx], DIO_LOW);
-
-            for (Local_u8ColIdx = 0; Local_u8ColIdx < KPD_NUM_COLS; Local_u8ColIdx++) {
-                DIO_enumGetPinValue(KPD_PORT, Local_u8ColArr[Local_u8ColIdx], &Local_u8PinState);
-
-                if (Local_u8PinState == DIO_LOW &&
-                    Local_u8KPDArr[Local_u8RowIdx][Local_u8ColIdx] == Local_u8PressedKey) {
-                    while (Local_u8PinState == DIO_LOW) {
-                        DIO_enumGetPinValue(KPD_PORT, Local_u8ColArr[Local_u8ColIdx], &Local_u8PinState);
-                    }
-
-                    /* Debounce delay */
-                    DELAY_voidMs(20);
-                    /* Deactivate current row before returning */
-                    DIO_enumSetPinValue(KPD_PORT, Local_u8RowArr[Local_u8RowIdx], DIO_HIGH);
-                    return Local_u8PressedKey;
-                }
-            }
-
-            /* Deactivate current row (HIGH) */
-            DIO_enumSetPinValue(KPD_PORT, Local_u8RowArr[Local_u8RowIdx], DIO_HIGH);
-        }
+    /* True non-blocking edge detection. 
+       Debounce is naturally handled because this function is only 
+       called every 20ms by the main super loop tick! */
+    if (Local_u8CurrentKey != s_u8LastKey) {
+        s_u8LastKey = Local_u8CurrentKey;
+        Local_u8ValidKey = Local_u8CurrentKey;
     }
 
-    return KPD_NOT_PRESSED;
+    return Local_u8ValidKey;
 }

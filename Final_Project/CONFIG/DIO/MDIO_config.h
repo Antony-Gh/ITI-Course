@@ -6,12 +6,6 @@
  *
  *  DIO Configuration for Function Generator project.
  *
- *  PORTA: All output → DAC0808 (D0..D7)
- *  PORTB: Default input (SPI pins available if needed)
- *  PORTC: Mixed — PC0..PC2 output (LCD ctrl), PC4..PC7 output (LCD data 4-bit)
- *         PC3 free
- *  PORTD: PD2..PD4 input with pull-up (buttons),
- *         PD5 output (OC1A HW square wave)
  */
 
 #ifndef DIO_CONFIG_H_
@@ -24,15 +18,15 @@
  *   - DIO_OUTPUT
  */
 
-/* PORTA — 8-bit DAC output */
-#define DIO_PORTA_PIN0_DIR DIO_OUTPUT
-#define DIO_PORTA_PIN1_DIR DIO_OUTPUT
-#define DIO_PORTA_PIN2_DIR DIO_OUTPUT
-#define DIO_PORTA_PIN3_DIR DIO_OUTPUT
-#define DIO_PORTA_PIN4_DIR DIO_OUTPUT
-#define DIO_PORTA_PIN5_DIR DIO_OUTPUT
-#define DIO_PORTA_PIN6_DIR DIO_OUTPUT
-#define DIO_PORTA_PIN7_DIR DIO_OUTPUT
+/* PORTA — ADC Input (PA0), Rest Free (Input) */
+#define DIO_PORTA_PIN0_DIR DIO_INPUT
+#define DIO_PORTA_PIN1_DIR DIO_INPUT
+#define DIO_PORTA_PIN2_DIR DIO_INPUT
+#define DIO_PORTA_PIN3_DIR DIO_INPUT
+#define DIO_PORTA_PIN4_DIR DIO_INPUT
+#define DIO_PORTA_PIN5_DIR DIO_INPUT
+#define DIO_PORTA_PIN6_DIR DIO_INPUT
+#define DIO_PORTA_PIN7_DIR DIO_INPUT
 
 /* PORTB — Default input (available for SPI / future expansion) */
 #define DIO_PORTB_PIN0_DIR DIO_INPUT
